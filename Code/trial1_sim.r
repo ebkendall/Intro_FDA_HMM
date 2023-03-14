@@ -5,7 +5,7 @@ set.seed(100)
 data_format = NULL
 
 # Setting up the true parameters / functional curves ---------------------------
-x = seq(1, 100, by = 0.5)
+x = seq(1, 100, by = 11)
 
 s1 = 28
 s2 = 38
@@ -16,6 +16,14 @@ U_2 = 1/(s2*sqrt(2 * pi))
 # covariance for f_1 and f_2 
 # U_j exp(-(x-t)^2  /  2s_j^2)
 K_1 = K_2 = matrix(nrow=length(x), ncol = length(x))
+
+# Additional attempt for K_1 and K_2
+# tau2 = 0.0001
+# sigma2 = 0.00001
+# d = tau2/sigma2
+# ones = matrix(1,nrow=100, ncol=1)
+# 
+# V = sigma2 * (diag(rep(100,100)) + d * (ones %*% t(ones)))
 
 rownum = 1
 for(i in x) {
@@ -43,8 +51,8 @@ pars = c( 0,       # init
 #                   f1 = 7:205,
 #                   f2 = 206:length(pars))
 par_index = list( init=1, beta = 2:3, sigma2 = 4, s = 5:6,
-                  f1 = 7:106,
-                  f2 = 107:length(pars))
+                  f1 = 7:16,
+                  f2 = 17:length(pars))
 
 for(ind in 1:100){
     

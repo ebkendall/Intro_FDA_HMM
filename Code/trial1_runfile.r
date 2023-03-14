@@ -1,4 +1,4 @@
-source("deSouza_routine.r")
+source("trial1_routine.r")
 
 args = commandArgs(TRUE)
 
@@ -11,6 +11,8 @@ load('Data/true_pars.rda')
 load('Data/par_index.rda')
 
 init_par = pars
+
+init_state = data_format[,"true_state"]
 
 prior_mean = rep(0, 5)
 prior_sd = rep(5, 5)
@@ -27,7 +29,7 @@ burnin = 5000
 s_time = Sys.time()
 
 mcmc_out = mcmc_routine(y, x, id, init_par, prior_par, par_index,
-                        steps, burnin, n_cores, ind)
+                        steps, burnin, n_cores, ind, init_state)
 
 e_time = Sys.time() - s_time; print(e_time)
 

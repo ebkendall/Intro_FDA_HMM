@@ -10,20 +10,12 @@ sourceCpp("trial1_routine_c.cpp")
 Sys.setenv("PKG_CXXFLAGS" = "-fopenmp")
 Sys.setenv("PKG_LIBS" = "-fopenmp")
 
-update_f_j = function(pars, par_index, K, j) {
-    
-}
-
-update_sigma2 = function(pars, par_index) {
-    
-}
-
 
 # -----------------------------------------------------------------------------
 # The mcmc routine for samping the parameters
 # -----------------------------------------------------------------------------
 mcmc_routine = function( y, x, id, init_par, prior_par, par_index,
-                         steps, burnin, n_cores, ind){
+                         steps, burnin, n_cores, ind, init_state){
     
     cl <- makeCluster(n_cores, outfile="")
     registerDoParallel(cl)
@@ -47,19 +39,33 @@ mcmc_routine = function( y, x, id, init_par, prior_par, par_index,
     accept = rep( 0, n_group)
     EIDs = unique(id)
     
+    # Initialize and store proposed state sequences
+    B = list()
+    for(i in 1:length(EIDs)) {
+        # state_sub = rep(1, length(y_1[id == EIDs[i]]))
+        state_sub = init_state[id == EIDs[i]]
+        b_temp = matrix(state_sub, ncol = 1)
+        B[[i]] = b_temp
+    }
+    
+    # Initialize K
+    K = update_K_j(pars, par_index, length(unique(x)))
+    
     # Begin the MCMC algorithm --------------------------------------------------
     chain[1,] = pars
     for(ttt in 2:steps){
         
-        # Setting up K_1, K_2
-        K = update_K_j(pars, par_index, length(unique(x)))
-        K_1 = K[[1]]
-        K_2 = K[[2]]
-        
         # Gibbs update for f1 and f2
-        pars[par_index$f1] = update_f_j(pars, par_index, K, 1)
-        pars[par_index$f2] = update_f_j(pars, par_index, K, 2)
+        pars[par_index$f1] = f_1 = update_f_j(pars, par_index, B, y, id, K, 0, EIDs)
+        pars[par_index$f2] = f_2 = update_f_j(pars, par_index, B, y, id, K, 1, EIDs)
         
+        # Gibbs update for sigma2
+        pars[par_index$sigma2] = update_sigma2(pars, par_index, id, B, y, EIDs)
+        
+        # S_chain: Metropolis-within-Gibbs update
+        # B_V = update_b_i_cpp(8, EIDs, pars, prior_par, par_index, y_1, id, B, V_i,y_2)
+        # B = B_V[[1]]
+        # V_i = B_V[[2]]
         
         # Evaluate the log_post of the initial pars
         log_post_prev = fn_log_post_continuous( pars, prior_par, par_index, y, x, id, K)
@@ -77,9 +83,8 @@ mcmc_routine = function( y, x, id, init_par, prior_par, par_index,
             proposal[ind_j] = rmvnorm( n=1, mean=pars[ind_j],sigma=pcov[[j]]*pscale[j])
             
             # Compute the log density for the proposal
-            log_post = fn_log_post_continuous(proposal, prior_par, 
-                                              par_index, y_1, y_2, 
-                                              t, id)
+            K_prop = update_K_j(proposal, par_index, length(unique(x)))
+            log_post = fn_log_post_continuous(proposal, prior_par, par_index, y, x, id, K_prop)
             
             # Only propose valid parameters during the burnin period
             if(ttt < burnin){
@@ -88,9 +93,8 @@ mcmc_routine = function( y, x, id, init_par, prior_par, par_index,
                     proposal = pars
                     proposal[ind_j] = rmvnorm( n=1, mean=pars[ind_j],
                                                sigma=pcov[[j]]*pscale[j])
-                    log_post = fn_log_post_continuous(proposal, prior_par, 
-                                                      par_index, y_1, y_2, 
-                                                      t, id)
+                    K_prop = update_K_j(proposal, par_index, length(unique(x)))
+                    log_post = fn_log_post_continuous(proposal, prior_par, par_index, y, x, id, K_prop)
                 }
             }
             
@@ -99,6 +103,7 @@ mcmc_routine = function( y, x, id, init_par, prior_par, par_index,
                 log_post_prev = log_post
                 pars[ind_j] = proposal[ind_j]
                 accept[j] = accept[j] +1
+                K = K_prop
             }
             chain[ttt,ind_j] = pars[ind_j]
             

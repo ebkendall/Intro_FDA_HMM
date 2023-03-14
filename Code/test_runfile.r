@@ -83,11 +83,6 @@ fn_log_post_continuous_r <- function(pars, prior_par, par_index, y, x, id, K, EI
     # Likelihood contribution from the rest
     log_f1_dens = dmvnorm(x = pars[par_index$f1], mean = rep(0, length(par_index$f1)), sigma = K[[1]], log = T)
     log_f2_dens = dmvnorm(x = pars[par_index$f2], mean = rep(0, length(par_index$f2)), sigma = K[[2]], log = T)
-    
-    print(log_total_val + log_prior_dens + log_f1_dens + log_f2_dens)
-    print(log_prior_dens)
-    print(log_f1_dens)
-    print(log_f2_dens)
 
     return(log_total_val + log_prior_dens + log_f1_dens + log_f2_dens)
     
@@ -105,23 +100,29 @@ prior_sd = rep(5, 5)
 prior_par = data.frame( prior_mean= prior_mean,
                         prior_sd= prior_sd)
 
+init_state = data_format[,"true_state"]
+
 temp_data = as.matrix(data_format); rownames(temp_data) = NULL
-id = temp_data[,"id"]
-y = temp_data[,"y"]
-x = temp_data[,"x"]
+id = temp_data[,"id", drop=F]
+y = temp_data[,"y", drop = F]
+x = temp_data[,"x", drop = F]
 EIDs = unique(id)
+
+B = list()
+for(i in 1:length(EIDs)) {
+    state_sub = init_state[id == EIDs[i]]
+    b_temp = matrix(state_sub, ncol = 1)
+    B[[i]] = b_temp
+}
 
 x_sub = x[id == 1]
 K = update_K_j(pars, par_index, x_sub)
 K_1 = K[[1]]
 K_2 = K[[2]]
 
-s_time = Sys.time()
-f_c = fn_log_post_continuous(pars, prior_par, par_index, y, x, id, K, EIDs)
-e_time = Sys.time() - s_time; print(e_time)
+f_1 = update_f_j(pars, par_index, B, y, id, K, 0, EIDs)
+f_2 = update_f_j(pars, par_index, B, y, id, K, 1, EIDs)
 
-s_time = Sys.time()
-f_r = fn_log_post_continuous_r(pars, prior_par, par_index, y, x, id, K, EIDs)
-e_time = Sys.time() - s_time; print(e_time)
 
-print(paste0("FINAL: ", f_r, " vs ", f_c))
+sig = update_sigma2(pars, par_index, id, B, y, EIDs)
+print(sig)
