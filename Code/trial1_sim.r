@@ -5,7 +5,7 @@ set.seed(100)
 data_format = NULL
 
 # Setting up the true parameters / functional curves ---------------------------
-x = seq(1, 100, by = 11)
+x = seq(1, 200, by = 10)
 
 s1 = 28
 s2 = 38
@@ -51,8 +51,8 @@ pars = c( 0,       # init
 #                   f1 = 7:205,
 #                   f2 = 206:length(pars))
 par_index = list( init=1, beta = 2:3, sigma2 = 4, s = 5:6,
-                  f1 = 7:16,
-                  f2 = 17:length(pars))
+                  f1 = 7:26,
+                  f2 = 27:length(pars))
 
 for(ind in 1:100){
     
@@ -95,9 +95,9 @@ for(ind in 1:100){
 
 colnames(data_format) = c('id', 'y', 'x', 'true_state')
 
-save(data_format, file = 'Data/data_format.rda')
-save(pars, file = 'Data/true_pars.rda')
-save(par_index, file = 'Data/par_index.rda')
+save(data_format, file = 'Data/data_format_2.rda')
+save(pars, file = 'Data/true_pars_2.rda')
+save(par_index, file = 'Data/par_index_2.rda')
 
 
 

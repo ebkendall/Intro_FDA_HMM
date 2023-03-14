@@ -223,8 +223,9 @@ arma::vec update_f_j(const arma::vec &pars, const arma::field<arma::uvec> &par_i
     arma::mat V = inv_sigma2 * vec_v_j;
     
     arma::mat temp2 = arma::diagmat(vec_w_j);
+    arma::mat temp3 = inv_sigma2 * temp2;
     
-    arma::mat W_inv = prec_j + inv_sigma2 * temp2;
+    arma::mat W_inv = prec_j + temp3;
     arma::mat W = arma::inv(W_inv);
     
     return arma::mvnrnd(W * V, W, 1);
@@ -306,8 +307,8 @@ double fn_log_post_continuous(const arma::vec &pars, const arma::field<arma::vec
     // Parallelized computation of the log-likelihood
     // omp_set_num_threads(6);
     // # pragma omp parallel for
+    
     for (int ii = 0; ii < EIDs.n_elem; ii++) {
-
         int i = EIDs(ii);
 
         // Subsetting the data
@@ -341,6 +342,7 @@ double fn_log_post_continuous(const arma::vec &pars, const arma::field<arma::vec
     
     double in_value = arma::accu(in_vals);
     
+    
     // Likelihood components from the Metropolis priors
     arma::vec p_mean = prior_par(0);
     arma::mat p_sd = arma::diagmat(prior_par(1));
@@ -348,7 +350,7 @@ double fn_log_post_continuous(const arma::vec &pars, const arma::field<arma::vec
     arma::vec init_val = pars.elem(par_index(0) - 1);
     arma::vec s = pars.elem(par_index(3) - 1);
     arma::mat p_x = arma::join_cols(arma::join_cols(init_val, beta),s);
-
+    
     double log_prior_dens = arma::as_scalar(dmvnorm(p_x.t(), p_mean, p_sd, true));
 
     // Likelihood contribution from the rest
@@ -369,7 +371,6 @@ double fn_log_post_continuous(const arma::vec &pars, const arma::field<arma::vec
     // double log_f1_dens = (f1.n_elem / -2) * log(2*pi) + -0.5 * (log_det_1 + interm1);
     // double log_f2_dens = (f1.n_elem / -2) * log(2*pi) + -0.5 * (log_det_2 + interm2);
     // -------------------------------------------------------------------------
-    
     double log_f1_dens = arma::as_scalar(dmvnorm(f1_mat.t(), f_mean, K_1, true));
     double log_f2_dens = arma::as_scalar(dmvnorm(f2_mat.t(), f_mean, K_2, true));
 

@@ -14,8 +14,8 @@ init_par = pars
 
 init_state = data_format[,"true_state"]
 
-prior_mean = rep(0, 5)
-prior_sd = rep(5, 5)
+prior_mean = c(0,0,0,20,30)
+prior_sd = rep(20, 5)
 prior_par = data.frame( prior_mean= prior_mean,
                         prior_sd= prior_sd)
 
@@ -29,7 +29,7 @@ burnin = 5000
 s_time = Sys.time()
 
 mcmc_out = mcmc_routine(y, x, id, init_par, prior_par, par_index,
-                        steps, burnin, n_cores, ind, init_state)
+                        steps, burnin, ind, init_state)
 
 e_time = Sys.time() - s_time; print(e_time)
 

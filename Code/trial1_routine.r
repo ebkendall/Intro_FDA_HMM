@@ -15,17 +15,14 @@ Sys.setenv("PKG_LIBS" = "-fopenmp")
 # The mcmc routine for samping the parameters
 # -----------------------------------------------------------------------------
 mcmc_routine = function( y, x, id, init_par, prior_par, par_index,
-                         steps, burnin, n_cores, ind, init_state){
-    
-    cl <- makeCluster(n_cores, outfile="")
-    registerDoParallel(cl)
+                         steps, burnin, ind, init_state){
     
     pars = init_par
     n = length(y)
     n_par = length(pars)
     chain = matrix( 0, steps, n_par)
     
-    group = list(c(par_index$beta), c(par_index$s))
+    group = list(c(par_index$init, par_index$beta), c(par_index$s))
     n_group = length(group)
     
     # proposal covariance and scale parameter for Metropolis step
@@ -49,15 +46,15 @@ mcmc_routine = function( y, x, id, init_par, prior_par, par_index,
     }
     
     # Initialize K
-    K = update_K_j(pars, par_index, length(unique(x)))
+    K = update_K_j(pars, par_index, unique(x))
     
     # Begin the MCMC algorithm --------------------------------------------------
     chain[1,] = pars
     for(ttt in 2:steps){
         
         # Gibbs update for f1 and f2
-        pars[par_index$f1] = f_1 = update_f_j(pars, par_index, B, y, id, K, 0, EIDs)
-        pars[par_index$f2] = f_2 = update_f_j(pars, par_index, B, y, id, K, 1, EIDs)
+        pars[par_index$f1] = update_f_j(pars, par_index, B, y, id, K, 0, EIDs)
+        pars[par_index$f2] = update_f_j(pars, par_index, B, y, id, K, 1, EIDs)
         
         # Gibbs update for sigma2
         pars[par_index$sigma2] = update_sigma2(pars, par_index, id, B, y, EIDs)
@@ -68,13 +65,14 @@ mcmc_routine = function( y, x, id, init_par, prior_par, par_index,
         # V_i = B_V[[2]]
         
         # Evaluate the log_post of the initial pars
-        log_post_prev = fn_log_post_continuous( pars, prior_par, par_index, y, x, id, K)
+        log_post_prev = fn_log_post_continuous( pars, prior_par, par_index, y, x, id, K, EIDs)
         
         if(!is.finite(log_post_prev)){
             print("Infinite log-posterior; choose better initial parameters")
             break
         }
         
+        chain[ttt, ] = pars
         for(j in 1:n_group){
             
             # Propose an update
@@ -83,8 +81,8 @@ mcmc_routine = function( y, x, id, init_par, prior_par, par_index,
             proposal[ind_j] = rmvnorm( n=1, mean=pars[ind_j],sigma=pcov[[j]]*pscale[j])
             
             # Compute the log density for the proposal
-            K_prop = update_K_j(proposal, par_index, length(unique(x)))
-            log_post = fn_log_post_continuous(proposal, prior_par, par_index, y, x, id, K_prop)
+            K_prop = update_K_j(proposal, par_index, unique(x))
+            log_post = fn_log_post_continuous(proposal, prior_par, par_index, y, x, id, K_prop, EIDs)
             
             # Only propose valid parameters during the burnin period
             if(ttt < burnin){
@@ -93,8 +91,8 @@ mcmc_routine = function( y, x, id, init_par, prior_par, par_index,
                     proposal = pars
                     proposal[ind_j] = rmvnorm( n=1, mean=pars[ind_j],
                                                sigma=pcov[[j]]*pscale[j])
-                    K_prop = update_K_j(proposal, par_index, length(unique(x)))
-                    log_post = fn_log_post_continuous(proposal, prior_par, par_index, y, x, id, K_prop)
+                    K_prop = update_K_j(proposal, par_index, unique(x))
+                    log_post = fn_log_post_continuous(proposal, prior_par, par_index, y, x, id, K_prop, EIDs)
                 }
             }
             
@@ -147,7 +145,6 @@ mcmc_routine = function( y, x, id, init_par, prior_par, par_index,
     }
     # ---------------------------------------------------------------------------
     
-    stopCluster(cl)
     print(accept/(steps-burnin))
     
     return(list( chain=chain[burnin:steps,], accept=accept/(steps-burnin),
