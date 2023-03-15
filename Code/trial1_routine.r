@@ -21,6 +21,7 @@ mcmc_routine = function( y, x, id, init_par, prior_par, par_index,
     n = length(y)
     n_par = length(pars)
     chain = matrix( 0, steps, n_par)
+    B_chain = matrix( 0, steps - burnin, length(y))
     
     group = list(c(par_index$init, par_index$beta), c(par_index$s))
     n_group = length(group)
@@ -59,10 +60,8 @@ mcmc_routine = function( y, x, id, init_par, prior_par, par_index,
         # Gibbs update for sigma2
         pars[par_index$sigma2] = update_sigma2(pars, par_index, id, B, y, EIDs)
         
-        # S_chain: Metropolis-within-Gibbs update
-        # B_V = update_b_i_cpp(8, EIDs, pars, prior_par, par_index, y_1, id, B, V_i,y_2)
-        # B = B_V[[1]]
-        # V_i = B_V[[2]]
+        # B_chain: Metropolis-within-Gibbs update
+        B = update_b_i_cpp(pars, par_index, y, id, EIDs, B)
         
         # Evaluate the log_post of the initial pars
         log_post_prev = fn_log_post_continuous( pars, prior_par, par_index, y, x, id, K, EIDs)
@@ -140,6 +139,9 @@ mcmc_routine = function( y, x, id, init_par, prior_par, par_index,
         }
         # Restart the acceptance ratio at burnin.
         if(ttt == burnin)  accept = rep( 0, n_group)
+        if(ttt > burnin) {
+            B_chain[ttt - burnin, ] = do.call( 'c', B)
+        }
         
         if(ttt%%1==0)  cat('--->',ttt,'\n')
     }
@@ -148,6 +150,6 @@ mcmc_routine = function( y, x, id, init_par, prior_par, par_index,
     print(accept/(steps-burnin))
     
     return(list( chain=chain[burnin:steps,], accept=accept/(steps-burnin),
-                 pscale=pscale, pcov = pcov))
+                 pscale=pscale, pcov = pcov, B_chain = B_chain))
 }
 # -----------------------------------------------------------------------------

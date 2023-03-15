@@ -379,86 +379,115 @@ double fn_log_post_continuous(const arma::vec &pars, const arma::field<arma::vec
     return in_value;
 }
 
+double log_f_i_cpp(const int i, const int ii, const arma::vec &pars, const arma::field<arma::uvec> &par_index,
+                   const arma::vec &y, const arma::vec &id, const arma::vec &B) {
+    
+    // par_index: (0) init, (1) beta, (2) sigma2, (3) s, (4) f1, (5) f2
+    // "i" is the numeric EID number
+    // "ii" is the index of the EID
+    double in_value = 0;
+    
+    // Subsetting the data
+    arma::uvec sub_ind = arma::find(id == i);
+    arma::vec y_i = y.elem(sub_ind);
+    
+    // Current State sequence
+    arma::mat b_i = B;
+    
+    // Initial state probabilities
+    arma::vec init_logit = {1, exp(arma::as_scalar(pars.elem(par_index(0) - 1)))};
+    arma::vec init = init_logit / arma::accu(init_logit);
+    
+    // Transition probability matrix
+    arma::vec beta = pars.elem(par_index(1) - 1);
+    arma::mat P = {{1, exp(beta(0))},
+                    {exp(beta(1)), 1}};
+    arma::vec P_row_sums = arma::sum(P, 1);
+    P = P.each_col() / P_row_sums;
+    
+    // Defining key terms
+    arma::vec f1 = pars.elem(par_index(4) - 1);
+    arma::vec f2 = pars.elem(par_index(5) - 1);
+    double sigma2 = arma::as_scalar(pars.elem(par_index(2) - 1));
+    double sigma = sqrt(sigma2);
+    
+    
+    // Full likelihood evaluation
+    for(int w=0; w < y_i.n_elem;++w){
+        if(w==0){
+            int p_int = b_i(0);
+            double y_mean;
+            if (p_int == 1) y_mean = f1(0);
+            if (p_int == 2) y_mean = f2(0);
+            
+            in_value = in_value + log(init(p_int - 1)) + arma::log_normpdf(y_i(0), y_mean, sigma);
+        }
+        else{
+            int b_k_1 = b_i(w-1);
+            int b_k = b_i(w);
+            
+            double y_mean;
+            if (b_k == 1) y_mean = f1(w);
+            if (b_k == 2) y_mean = f2(w);
+            
+            in_value = in_value + log(P( b_k_1 - 1, b_k - 1)) + arma::log_normpdf(y_i(w), y_mean, sigma);
+        }
+    }
+    
+    return in_value;
+}
 
-// Rcpp::List update_b_i_cpp(const int t, const arma::vec &EIDs, const arma::vec &pars,
-//                           const arma::field<arma::vec> &prior_par, const arma::field<arma::uvec> &par_index,
-//                           const arma::vec &y_1, const arma::vec &id,
-//                           arma::field <arma::vec> &B, arma::field <arma::mat> &V_i,
-//                           const arma::vec &y_2) {
-// 
-//     // par_index: (0) init, (1) beta, (2) sigma2, (3) s, (4) f1, (5) f2
-//     // "i" is the numeric EID number
-//     // "ii" is the index of the EID
-//     //  ALWAYS DOUBLE CHECK THESE INDICES. WE LOSE THE NAMES FEATURE
-// 
-//     arma::field<arma::vec> B_return(EIDs.n_elem);
-//     arma::field<arma::mat> V_return(EIDs.n_elem);
-//     
-//     omp_set_num_threads(t) ;
-//     # pragma omp parallel for
-//     for (int ii = 0; ii < EIDs.n_elem; ii++) {
-//         int i = EIDs(ii);
-//         arma::uvec sub_ind = arma::find(id == i);
-//         
-//         int n_i = sub_ind.n_elem;
-//         arma::vec y_1_sub = y_1.elem(sub_ind);
-//         
-//         // Subsetting fields
-//         arma::vec B_temp = B(ii);
-//         arma::mat V_temp = V_i(ii);
-//         
-//         // The first state is always S1, therefore we start at 1 instead of 0
-//         for (int k = 1; k < n_i - 1; k++) {
-//             
-//             arma::vec t_pts = {k, k+1};
-//             arma::vec pr_B = B_temp;
-//             arma::mat pr_V = V_temp;
-//             
-//             // Sample and update the two neighboring states
-//             arma::mat Omega_set = Omega_fun_cpp_new(k + 1, n_i, B_temp);
-//             
-//             int sampled_index = arma::randi(arma::distr_param(1, Omega_set.n_rows));
-//             
-//             pr_B.rows(k, k+1) = Omega_set.row(sampled_index-1).t();
-//             
-//             // Adding clinical review
-//             bool valid_prop = true;
-//             
-//             if(valid_prop) {
-//                 double log_target_prev = log_f_i_cpp(i, ii, pars, prior_par,
-//                                                      par_index, y_1, t_pts, id,
-//                                                      B_temp, y_2, V_temp, EIDs.n_elem);
-//                 
-//                 arma::vec col1(pr_B.n_elem, arma::fill::ones);
-//                 arma::vec col2(pr_B.n_elem, arma::fill::zeros);
-//                 col2.elem(arma::find(pr_B == 2)).ones();
-//                 arma::vec col3(pr_B.n_elem, arma::fill::zeros);
-//                 col3.elem(arma::find(pr_B == 3)).ones();
-//                 
-//                 pr_V = arma::join_horiz(col1, arma::join_horiz(col2, col3));
-//                 
-//                 double log_target = log_f_i_cpp(i, ii, pars, prior_par,
-//                                                 par_index, y_1, t_pts, id,
-//                                                 pr_B, y_2, pr_V, EIDs.n_elem);
-//                 
-//                 // Note that the proposal probs cancel in the MH ratio
-//                 double diff_check = log_target - log_target_prev;
-//                 double min_log = log(arma::randu(arma::distr_param(0,1)));
-//                 // Rcpp::Rcout << diff_check << "  " << min_log << std::endl;
-//                 if(diff_check > min_log){
-//                     B_temp = pr_B;
-//                     V_temp = pr_V;
-//                 }
-//             }
-//         }
-//         B_return(ii) = B_temp;
-//         V_return(ii) = V_temp;
-//     }
-//     
-//     List B_V = List::create(B_return, V_return);
-//     
-//     return B_V;
-// }
+// [[Rcpp::export]]
+arma::field<arma::vec> update_b_i_cpp(const arma::vec &pars, const arma::field<arma::uvec> &par_index,
+                                      const arma::vec &y, const arma::vec &id, const arma::vec &EIDs,
+                                      arma::field<arma::vec> &B) {
+
+    // par_index: (0) init, (1) beta, (2) sigma2, (3) s, (4) f1, (5) f2
+    // "i" is the numeric EID number
+    // "ii" is the index of the EID
+
+    arma::field<arma::vec> B_return(EIDs.n_elem);
+
+    // omp_set_num_threads(8) ;
+    // # pragma omp parallel for
+    for (int ii = 0; ii < EIDs.n_elem; ii++) {
+        int i = EIDs(ii);
+        
+        // Subsetting the data
+        arma::uvec sub_ind = arma::find(id == i);
+        arma::vec y_i = y.elem(sub_ind);
+
+        // Subsetting fields
+        arma::vec B_temp = B(ii);
+
+        // The first state is always S1, therefore we start at 1 instead of 0
+        for (int k = 0; k < y_i.n_elem - 1; k++) {
+
+            arma::vec t_pts = {k, k+1};
+            arma::vec pr_B = B_temp;
+
+            // Sample and update the two neighboring states
+            arma::mat Omega_set = Omega_fun_cpp_new(k + 1, y_i.n_elem, B_temp);
+
+            int sampled_index = arma::randi(arma::distr_param(1, Omega_set.n_rows));
+
+            pr_B.rows(k, k+1) = Omega_set.row(sampled_index-1).t();
+
+            double log_target_prev = log_f_i_cpp(i, ii, pars, par_index, y, id, B_temp);
+            double log_target      = log_f_i_cpp(i, ii, pars, par_index, y, id, pr_B);
+            
+            // Note that the proposal probs cancel in the MH ratio
+            double diff_check = log_target - log_target_prev;
+            double min_log = log(arma::randu(arma::distr_param(0,1)));
+            if(diff_check > min_log){
+                B_temp = pr_B;
+            }
+        }
+        B_return(ii) = B_temp;
+    }
+
+    return B_return;
+}
 
 
 // [[Rcpp::export]]
