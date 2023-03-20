@@ -1,11 +1,11 @@
 library(mvtnorm)
 
-set.seed(100)
+set.seed(102)
 
 data_format = NULL
 
 # Setting up the true parameters / functional curves ---------------------------
-x = seq(1, 200, by = 10)
+x = seq(1, 100, by = 11)
 
 s1 = 28
 s2 = 38
