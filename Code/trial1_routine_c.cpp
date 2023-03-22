@@ -463,6 +463,12 @@ arma::field<arma::vec> update_b_i_cpp(const arma::vec &pars, const arma::field<a
         // The first state is always S1, therefore we start at 1 instead of 0
         for (int k = 0; k < y_i.n_elem - 1; k++) {
 
+            // arma::vec t_pts;
+            // if (k == n_i - 2) {
+            //     t_pts = arma::linspace(k+1, k+2, 2);
+            // } else {
+            //     t_pts = arma::linspace(k+1, k+3, 3);
+            // }
             arma::vec t_pts = {k, k+1};
             arma::vec pr_B = B_temp;
 
