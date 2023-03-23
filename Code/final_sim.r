@@ -22,33 +22,34 @@ basis_s2 = create.bspline.basis(range(t),norder=4,nbasis=10)
 basis_s1_eval_pts = getbasismatrix(t, basis_s1, nderiv=0)
 basis_s2_eval_pts = getbasismatrix(t, basis_s2, nderiv=0)
 
-coef_s1 = c(-2,0,1.5,1.5,0,-1,-0.5,-1,0,0) # beta_1
-coef_s2 = c(1,3,-0.5,-1,0,2,0.5,1,2,1)     # beta_2
+# Whichever beta we set to 0 is an indication that it is not necessary
+coef_s1 = c(-2, 0,  1.5, 1.5, 0, -1, -0.5, -1, 0, 0) # beta_1
+coef_s2 = c( 1, 3, -0.5,  -1, 0,  2,  0.5,  1, 2, 1) # beta_2
 
 true_fnc_1 = basis_s1_eval_pts %*% coef_s1
 true_fnc_2 = basis_s2_eval_pts %*% coef_s2
-plot(true_fnc_1, ylim = c(min(c(true_fnc_1, true_fnc_2)), max(c(true_fnc_1, true_fnc_2))))
-points(true_fnc_2)
+# plot(true_fnc_1, ylim = c(min(c(true_fnc_1, true_fnc_2)), max(c(true_fnc_1, true_fnc_2))))
+# points(true_fnc_2)
 
 pars = c( 0,       # init
-          -2, -2,  # pi
+          -2, -2,  # omega
           sigma2,  # sigma2
           coef_s1, # beta_1
           coef_s1) # beta_2
 
-par_index = list( init=1, pi = 2:3, sigma2 = 4,
+par_index = list( init=1, omega = 2:3, sigma2 = 4,
                   beta_1 = 5:14,
                   beta_2 = 15:24)
 
-for(ind in 1:100){
+for(ind in 1:50){
     
     # Generate the s_i ------------------------------------------------------------
     # s_i time homogeneous Markov process
     init_prob = c(1, exp(pars[par_index$init]))
     init_prob = init_prob / sum(init_prob)
     
-    tpm = matrix(c(1, exp(pars[par_index$pi][1]),
-                   exp(pars[par_index$pi][2]), 1), nrow=2, byrow = T)
+    tpm = matrix(c(1, exp(pars[par_index$omega][1]),
+                   exp(pars[par_index$omega][2]), 1), nrow=2, byrow = T)
     tpm = tpm / rowSums(tpm)
     
     s = sample(x = 1:2, size = 1, prob = init_prob)
@@ -72,8 +73,8 @@ for(ind in 1:100){
 }
 colnames(data_format) = c('id', 'y', 't', 'true_state')
 
-save(data_format, file = 'Data/data_format_final.rda')
-save(pars, file = 'Data/true_pars_final.rda')
-save(par_index, file = 'Data/par_index_final.rda')
+save(data_format, file = 'Data/data_format.rda')
+save(pars, file = 'Data/true_pars.rda')
+save(par_index, file = 'Data/par_index.rda')
 
 

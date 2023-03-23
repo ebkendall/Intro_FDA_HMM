@@ -135,7 +135,7 @@ arma::mat Omega_fun_cpp_new(const int k, const int n_i, const arma::vec &b_i) {
 // [[Rcpp::export]]
 arma::field<arma::mat> update_K_j(const arma::vec &pars, const arma::field<arma::uvec> &par_index, arma::vec x) {
     
-    // par_index: (0) init, (1) beta, (2) sigma2, (3) s, (4) f1, (5) f2
+    // par_index: (0) init, (1) pi, (2) sigma2, (3) s, (4) f1, (5) f2
     
     arma::vec s = pars.elem(par_index(3) - 1);
     double s1 = s(0);
