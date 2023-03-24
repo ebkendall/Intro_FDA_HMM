@@ -77,4 +77,21 @@ save(data_format, file = 'Data/data_format.rda')
 save(pars, file = 'Data/true_pars.rda')
 save(par_index, file = 'Data/par_index.rda')
 
+# Creating the B-spline to be used in the runfile
+# We will change K in a dense grid around 10 to determine a metric to test the 
+# optimal number of basis splines
+# Since each subject has the same observation points, each B1(i) = B2(i) = B
+# Otherwise we would have to create a list for each of the different subjectss
+K = 5:20
+big_B = vector(mode = 'list', length = length(K))
+
+for(k in K) {
+    basis_init = create.bspline.basis(range(t),norder=4,nbasis=k)
+    basis_init_eval_pts = getbasismatrix(t, basis_init, nderiv=0)
+    big_B[[k-4]] = basis_init_eval_pts
+}
+names(big_B) = as.character(K)
+save(big_B, file = 'Data/big_B.rda')
+
+
 

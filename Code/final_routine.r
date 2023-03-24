@@ -1,11 +1,10 @@
 library(mvtnorm, quietly=T)
-library(fda)
 
 # Rcpp packages
 library(Rcpp)
 library(RcppArmadillo)
 library(RcppDist, quietly = T)
-sourceCpp("trial1_routine_c.cpp")
+sourceCpp("final_routine_c.cpp")
 
 # Needed for OpenMP C++ parallel
 Sys.setenv("PKG_CXXFLAGS" = "-fopenmp")
@@ -55,18 +54,25 @@ mcmc_routine = function( y, t, id, init_par, prior_par, par_index,
         
         # Gibbs update for beta_1 and beta_2
         pars[par_index$beta_1] = update_beta_j(pars, par_index, W_1, W_2, 
-                                               y, id, K, 1, EIDs, B_1, B_2)
+                                               y, id, 1, EIDs, B_1, B_2)
         pars[par_index$beta_2] = update_beta_j(pars, par_index, W_1, W_2, 
-                                               y, id, K, 2, EIDs, B_1, B_2)
+                                               y, id, 2, EIDs, B_1, B_2)
         
         # Gibbs update for sigma2
-        pars[par_index$sigma2] = update_sigma2(pars, par_index, id, B, y, EIDs)
+        pars[par_index$sigma2] = update_sigma2(pars, par_index, id, y, EIDs,
+                                               W_1, W_2, B_1, B_2)
         
         # B_chain: Metropolis-within-Gibbs update
-        B = update_b_i_cpp(pars, par_index, y, id, EIDs, B)
+        B = update_b_i_cpp(pars, par_index, y, id, EIDs, B, B_1, B_2)
+        
+        # Update W
+        for(i in 1:length(EIDs)) {
+            W_1[[i]] = as.numeric(B[[i]] == 1)
+            W_2[[i]] = as.numeric(B[[i]] == 2)
+        }
         
         # Evaluate the log_post of the initial pars
-        log_post_prev = fn_log_post_continuous( pars, prior_par, par_index, y, t, id, K, EIDs)
+        log_post_prev = fn_log_post_continuous( pars, prior_par, par_index, y, id, EIDs, B_1, B_2)
         
         if(!is.finite(log_post_prev)){
             print("Infinite log-posterior; choose better initial parameters")
@@ -82,8 +88,7 @@ mcmc_routine = function( y, t, id, init_par, prior_par, par_index,
             proposal[ind_j] = rmvnorm( n=1, mean=pars[ind_j],sigma=pcov[[j]]*pscale[j])
             
             # Compute the log density for the proposal
-            K_prop = update_K_j(proposal, par_index, unique(t))
-            log_post = fn_log_post_continuous(proposal, prior_par, par_index, y, t, id, K_prop, EIDs)
+            log_post = fn_log_post_continuous(proposal, prior_par, par_index, y, id, EIDs, B_1, B_2)
             
             # Only propose valid parameters during the burnin period
             if(ttt < burnin){
@@ -92,8 +97,7 @@ mcmc_routine = function( y, t, id, init_par, prior_par, par_index,
                     proposal = pars
                     proposal[ind_j] = rmvnorm( n=1, mean=pars[ind_j],
                                                sigma=pcov[[j]]*pscale[j])
-                    K_prop = update_K_j(proposal, par_index, unique(t))
-                    log_post = fn_log_post_continuous(proposal, prior_par, par_index, y, t, id, K_prop, EIDs)
+                    log_post = fn_log_post_continuous(proposal, prior_par, par_index, y, id, EIDs, B_1, B_2)
                 }
             }
             
@@ -102,7 +106,6 @@ mcmc_routine = function( y, t, id, init_par, prior_par, par_index,
                 log_post_prev = log_post
                 pars[ind_j] = proposal[ind_j]
                 accept[j] = accept[j] +1
-                K = K_prop
             }
             chain[ttt,ind_j] = pars[ind_j]
             

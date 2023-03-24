@@ -4,7 +4,7 @@ library(mvtnorm, quietly=T)
 library(Rcpp, quietly=T)
 library(RcppArmadillo, quietly = T)
 library(RcppDist, quietly = T)
-sourceCpp("trial1_routine_c.cpp")
+sourceCpp("final_routine_c.cpp")
 
 # Needed for OpenMP C++ parallel
 Sys.setenv("PKG_CXXFLAGS" = "-fopenmp")
@@ -105,7 +105,6 @@ init_state = data_format[,"true_state"]
 temp_data = as.matrix(data_format); rownames(temp_data) = NULL
 id = temp_data[,"id", drop=F]
 y = temp_data[,"y", drop = F]
-x = temp_data[,"x", drop = F]
 EIDs = unique(id)
 
 B = list()
@@ -115,14 +114,5 @@ for(i in 1:length(EIDs)) {
     B[[i]] = b_temp
 }
 
-x_sub = x[id == 1]
-K = update_K_j(pars, par_index, x_sub)
-K_1 = K[[1]]
-K_2 = K[[2]]
 
-f_1 = update_f_j(pars, par_index, B, y, id, K, 0, EIDs)
-f_2 = update_f_j(pars, par_index, B, y, id, K, 1, EIDs)
-
-
-sig = update_sigma2(pars, par_index, id, B, y, EIDs)
-print(sig)
+test_functions(pars, par_index)
