@@ -3,22 +3,22 @@ library(tidyverse)
 library(gridExtra)
 library(latex2exp)
 
-dir = 'Model_out/' 
-args <- commandArgs(TRUE)
+dir = 'Model_out/'
 
 # Size of posterior sample from mcmc chains
 n_post = 5000
 # Step number at which the adaptive tuning scheme was frozen
 burnin = 5000
 # Total number of steps the mcmc algorithm is computed for
-steps = 30000
+steps = 10000
 # Matrix row indices for the posterior sample to use
 index_post = (steps - burnin - n_post + 1):(steps - burnin)
 
-index_seeds = c(1:3)
+index_seeds = c(1:5)
+trial_num = 2
 
-labels = c('logit initial', 'beta_1', 'beta_2', 'sigma2', 's1', 's2',
-           paste0('f1(x', 1:10, ')'), paste0('f2(x', 1:10, ')'))
+labels = c('logit initial', 'omega_1', 'omega_2', 'sigma2',
+           paste0('beta1(', 1:10, ')'), paste0('beta2(', 1:10, ')'))
 load('Data/par_index.rda')
 load('Data/true_pars.rda')
 
@@ -32,7 +32,7 @@ ind = 0
 
 for(seed in index_seeds){
 
-    file_name = paste0(dir,'mcmc_out_',toString(seed), '.rda')
+    file_name = paste0(dir,'mcmc_out_',toString(seed), '_', trial_num, '.rda')
     
     if (file.exists(file_name)) {
         load(file_name)
@@ -51,7 +51,7 @@ for(seed in index_seeds){
 
 # Plot and save the mcmc trace plots and histograms.
 
-pdf(paste0('Plots/mcmc_out_', 1, '.pdf'))
+pdf(paste0('Plots/mcmc_out_', trial_num, '.pdf'))
 par(mfrow=c(4, 2))
 
 stacked_chains = do.call( rbind, chain_list)

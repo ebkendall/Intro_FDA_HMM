@@ -6,6 +6,8 @@ ind = as.numeric(args[1])
 set.seed(ind)
 print(ind)
 
+trial_num = 1
+
 load('Data/data_format.rda')
 load('Data/true_pars.rda')
 load('Data/par_index.rda')
@@ -37,4 +39,4 @@ mcmc_out = mcmc_routine(y, t, id, init_par, prior_par, par_index,
 
 e_time = Sys.time() - s_time; print(e_time)
 
-save(mcmc_out, file = paste0("Model_out/mcmc_out_", ind, ".rda"))
+save(mcmc_out, file = paste0("Model_out/mcmc_out_", ind, "_", trial_num, ".rda"))

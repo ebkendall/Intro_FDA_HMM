@@ -22,10 +22,10 @@ arma::vec update_beta_j(const arma::vec &pars, const arma::field<arma::uvec> &pa
     double inv_sigma2 = 1/sigma2;
     
     // Defining the informed priors on beta_1 and beta_2
-    // arma::mat alpha_1(beta_1.n_elem, 1, arma::fill::zeros);
-    // arma::mat alpha_2(beta_2.n_elem, 1, arma::fill::zeros);
-    arma::vec alpha_1 = {-2, 0,  1.5, 1.5, 0, -1, -0.5, -1, 0, 0};
-    arma::vec alpha_2 = { 1, 3, -0.5,  -1, 0,  2,  0.5,  1, 2, 1};
+    arma::mat alpha_1(beta_1.n_elem, 1, arma::fill::zeros);
+    arma::mat alpha_2(beta_2.n_elem, 1, arma::fill::zeros);
+    // arma::vec alpha_1 = {-2, 0,  1.5, 1.5, 0, -1, -0.5, -1, 0, 0};
+    // arma::vec alpha_2 = { 1, 3, -0.5,  -1, 0,  2,  0.5,  1, 2, 1};
     double tau2 = 10;
     double inv_tau2 = 1/tau2;
     

@@ -35,7 +35,7 @@ pars = c( 0,       # init
           -2, -2,  # omega
           sigma2,  # sigma2
           coef_s1, # beta_1
-          coef_s1) # beta_2
+          coef_s2) # beta_2
 
 par_index = list( init=1, omega = 2:3, sigma2 = 4,
                   beta_1 = 5:14,
