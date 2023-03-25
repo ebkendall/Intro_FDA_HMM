@@ -40,7 +40,7 @@ pars = c( 0,       # init
 par_index = list( init=1, omega = 2:3, sigma2 = 4,
                   beta_1 = 5:14,
                   beta_2 = 15:24)
-
+y_mat = matrix(nrow = 50, ncol = length(t))
 for(ind in 1:50){
     
     # Generate the s_i ------------------------------------------------------------
@@ -67,7 +67,7 @@ for(ind in 1:50){
             y = c(y, true_fnc_2[i] + rnorm(1, mean = 0, sd = sqrt(pars[par_index$sigma2])))
         }
     }
-    
+    y_mat[ind, ] = y
     temp = cbind(ind, y, t, s)
     data_format = rbind(data_format, temp)
 }
@@ -76,6 +76,8 @@ colnames(data_format) = c('id', 'y', 't', 'true_state')
 save(data_format, file = 'Data/data_format.rda')
 save(pars, file = 'Data/true_pars.rda')
 save(par_index, file = 'Data/par_index.rda')
+save(y_mat, file = 'Data/y_mat.rda')
+
 
 # Creating the B-spline to be used in the runfile
 # We will change K in a dense grid around 10 to determine a metric to test the 

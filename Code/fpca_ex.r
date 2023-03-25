@@ -98,3 +98,11 @@ round(rho/sum(rho), digits = 3)
 # Tidemann miller
 # define the basis needed and then we will do MCMC on the coefficients
 psi = cbind(rho[1] * xi[,1], rho[2] * xi[,2])
+
+
+V_mat = (1/N) * (t(y_mat) %*% y_mat)
+eigen_V = eigen(V_mat)
+rho = eigen_V$values * w
+xi = eigen_V$vectors * (1/sqrt(w))
+
+round(rho/sum(rho), digits = 3)
