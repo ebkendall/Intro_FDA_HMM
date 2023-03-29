@@ -1,6 +1,16 @@
-# Obtain 95% Credible sets for the transition rate parameters and variance terms
-
 # Obtain 95% Credible sets and coverage probabilities for the true function values
+load('Data/big_B.rda')
+K = length(big_B)
+N = 100
+
+# B-splines
+for (k in 1:K) {
+    for(i in 1:N) {
+        
+    }
+}
+
+# Obtain 95% Credible sets for the transition rate parameters and variance terms
 
 # Average (or Expected) mean square error 
 
