@@ -5,6 +5,10 @@ library(latex2exp)
 
 dir = 'Model_out/'
 
+args = commandArgs(TRUE)
+
+spline_or_fpca = as.numeric(args[1]) 
+
 # Size of posterior sample from mcmc chains
 n_post = 5000
 # Step number at which the adaptive tuning scheme was frozen
@@ -17,10 +21,17 @@ index_post = (steps - burnin - n_post + 1):(steps - burnin)
 index_seeds = c(1:5)
 trial_num = 1
 
-labels = c('logit initial', 'omega_1', 'omega_2', 'sigma2',
-           paste0('beta1(', 1:10, ')'), paste0('beta2(', 1:10, ')'),
-           paste0('theta1(', 1:10, ')'), paste0('theta2(', 1:10, ')'),
-           paste0('Z1(', 1:10, ')'), paste0('Z2(', 1:10, ')'))
+if(spline_or_fpca == 1) {
+    labels = c('logit initial', 'omega_1', 'omega_2', 'sigma2',
+            paste0('beta1(', 1:10, ')'), paste0('beta2(', 1:10, ')'),
+            paste0('theta1(', 1:10, ')'), paste0('theta2(', 1:10, ')'),
+            paste0('Z1(', 1:10, ')'), paste0('Z2(', 1:10, ')'))
+} else if(spline_or_fpca == 0) {
+    load(paste0('Model_out/mcmc_out_', index_seeds[1], '_', trial_num, '_fpca.rda'))
+    labels = c('logit initial', 'omega_1', 'omega_2', 'sigma2',
+            paste0('beta1(', 1:19, ')'), paste0('beta2(', 1:19, ')'))
+}
+
 load('Data/par_index.rda')
 load('Data/true_pars.rda')
 
@@ -34,7 +45,11 @@ ind = 0
 
 for(seed in index_seeds){
 
-    file_name = paste0(dir,'mcmc_out_',toString(seed), '_', trial_num, '_bspline.rda')
+    if(spline_or_fpca == 1) {
+        file_name = paste0(dir,'mcmc_out_',toString(seed), '_', trial_num, '_bspline.rda')
+    } else if(spline_or_fpca == 0) {
+        file_name = paste0(dir,'mcmc_out_',toString(seed), '_', trial_num, '_fpca.rda')
+    }
     
     if (file.exists(file_name)) {
         load(file_name)
@@ -52,16 +67,20 @@ for(seed in index_seeds){
 }
 
 # Plot and save the mcmc trace plots and histograms.
+pdf_name=NULL
+if(spline_or_fpca == 1) {
+    pdf_name = paste0('Plots/mcmc_out_', trial_num, '_bspline.pdf')
+} else if(spline_or_fpca == 0) {
+    pdf_name = paste0('Plots/mcmc_out_', trial_num, '_fpca.pdf')
+}
 
-pdf(paste0('Plots/mcmc_out_', trial_num, '_bspline.pdf'))
+pdf(pdf_name)
 par(mfrow=c(4, 2))
 
 stacked_chains = do.call( rbind, chain_list)
 par_mean = par_median = upper = lower = rep( NA, length(labels))
 
-labels_sub <- 1:length(labels)
-
-for(r in 1:length(labels_sub)){
+for(r in 1:length(labels)){
 
     plot( NULL, xlab=paste0("true val: ", round(pars[r], 3)), ylab=NA, main=labels[r], xlim=c(1,nrow(chain_list[[1]])),
           ylim=range(stacked_chains[,r]) )

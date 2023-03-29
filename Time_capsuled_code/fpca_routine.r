@@ -156,7 +156,7 @@ mcmc_routine = function( y, t, id, init_par, prior_par, par_index,
     
     return(list( chain=chain[burnin:steps,], accept=accept/(steps-burnin),
                  pscale=pscale, pcov = pcov, B_chain = B_chain,
-                 B_1 = B_1, B_2 = B_2))
+                 B_1 = B_1_master, B_2 = B_2_master, par_index = par_index))
 }
 # -----------------------------------------------------------------------------
 

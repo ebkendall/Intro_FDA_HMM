@@ -88,18 +88,17 @@ arma::vec update_beta_j(const arma::vec &pars, const arma::field<arma::uvec> &pa
                         const int j, const arma::vec &EIDs,
                         const arma::mat &B_1, const arma::mat &B_2) {
     // par_index: (0) init, (1) omega, (2) sigma2, (3) beta_1, (4) beta_2
+    //            (5) theta_1, (6) theta_2, (7) Z_1, (8) Z_2
     
     arma::vec beta_1 = pars.elem(par_index(3) - 1);
     arma::vec beta_2 = pars.elem(par_index(4) - 1);
     double sigma2 = arma::as_scalar(pars.elem(par_index(2)- 1));
     double inv_sigma2 = 1/sigma2;
     
-    // Defining the informed priors on beta_1 and beta_2
+    // Defining the uninformed priors on beta_1 and beta_2
     arma::mat alpha_1(beta_1.n_elem, 1, arma::fill::zeros);
     arma::mat alpha_2(beta_2.n_elem, 1, arma::fill::zeros);
-    // arma::vec alpha_1 = {-2, 0,  1.5, 1.5, 0, -1, -0.5, -1, 0, 0};
-    // arma::vec alpha_2 = { 1, 3, -0.5,  -1, 0,  2,  0.5,  1, 2, 1};
-    double tau2 = 10;
+    double tau2 = 20;
     double inv_tau2 = 1/tau2;
     
     // Calculating the conjugate mean and variance
@@ -153,6 +152,7 @@ double update_sigma2(const arma::vec &pars, const arma::field<arma::uvec> &par_i
                      const arma::vec &y, const arma::vec &EIDs, const arma::field<arma::vec> &W_1, 
                      const arma::field<arma::vec> &W_2, const arma::mat &B_1, const arma::mat &B_2) {
     // par_index: (0) init, (1) omega, (2) sigma2, (3) beta_1, (4) beta_2
+    //            (5) theta_1, (6) theta_2, (7) Z_1, (8) Z_2
     int lambda1 = 1;
     int lambda2 = 1;
     
@@ -197,8 +197,9 @@ double fn_log_post_continuous(const arma::vec &pars, const arma::field<arma::vec
                               const arma::mat &B_1, const arma::mat &B_2) {
     
     // par_index: (0) init, (1) omega, (2) sigma2, (3) beta_1, (4) beta_2
-    // "i" is the numeric EID number
-    // "ii" is the index of the EID
+    //            (5) theta_1, (6) theta_2, (7) Z_1, (8) Z_2
+    // "i" is the numeric ID number
+    // "ii" is the index of the ID
     
     // Storage of the likelihood expression
     arma::vec in_vals(EIDs.n_elem, arma::fill::zeros);
@@ -221,8 +222,8 @@ double fn_log_post_continuous(const arma::vec &pars, const arma::field<arma::vec
     double sigma = sqrt(sigma2);
     
     // Parallelized computation of the log-likelihood
-    // omp_set_num_threads(6);
-    // # pragma omp parallel for
+    omp_set_num_threads(6);
+    # pragma omp parallel for
     for (int ii = 0; ii < EIDs.n_elem; ii++) {
         int i = EIDs(ii);
         
@@ -287,8 +288,9 @@ double log_f_i_cpp(const int i, const int ii, const arma::vec &pars, const arma:
                    const int &state_ind, const arma::mat &B_1, const arma::mat &B_2) {
     
     // par_index: (0) init, (1) omega, (2) sigma2, (3) beta_1, (4) beta_2
-    // "i" is the numeric EID number
-    // "ii" is the index of the EID
+    //            (5) theta_1, (6) theta_2, (7) Z_1, (8) Z_2
+    // "i" is the numeric ID number
+    // "ii" is the index of the ID
     double in_value = 0;
     
     // Subsetting the data
@@ -353,13 +355,14 @@ arma::field<arma::vec> update_b_i_cpp(const arma::vec &pars, const arma::field<a
                                       arma::field<arma::vec> &B, const arma::mat &B_1, const arma::mat &B_2) {
     
     // par_index: (0) init, (1) omega, (2) sigma2, (3) beta_1, (4) beta_2
+    //            (5) theta_1, (6) theta_2, (7) Z_1, (8) Z_2
     // "i" is the numeric EID number
     // "ii" is the index of the EID
     
     arma::field<arma::vec> B_return(EIDs.n_elem);
     
-    // omp_set_num_threads(8) ;
-    // # pragma omp parallel for
+    omp_set_num_threads(6) ;
+    # pragma omp parallel for
     for (int ii = 0; ii < EIDs.n_elem; ii++) {
         int i = EIDs(ii);
         
