@@ -7,7 +7,8 @@ set.seed(ind)
 print(ind)
 
 load('Data/big_B.rda')
-load(paste0('Data/data_format_', ind, '.rda'))
+# load(paste0('Data/data_format_', ind, '.rda'))
+load(paste0('Data/data_format_1.rda'))
 
 for(k in 1:length(big_B)) {
     

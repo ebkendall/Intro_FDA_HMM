@@ -86,8 +86,8 @@ mcmc_routine = function( y, t, id, init_par, prior_par, par_index,
         B_2 = both_B[[2]]
         
         # Update theta_1 and theta_2
-        pars[par_index$theta_1] = update_theta_j(pars, par_index, 1)
-        pars[par_index$theta_2] = update_theta_j(pars, par_index, 2)
+        # pars[par_index$theta_1] = update_theta_j(pars, par_index, 1)
+        # pars[par_index$theta_2] = update_theta_j(pars, par_index, 2)
         
         # Evaluate the log_post of the initial pars
         log_post_prev = fn_log_post_continuous( pars, prior_par, par_index, y, id, EIDs, B_1, B_2)

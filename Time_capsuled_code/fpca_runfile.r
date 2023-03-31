@@ -8,11 +8,13 @@ ind = as.numeric(args[1])
 set.seed(ind)
 print(ind)
 
-load(paste0('Data/data_format_', ind, '.rda'))
-load(paste0('Data/y_mat_', ind, '.rda'))
+# load(paste0('Data/data_format_', ind, '.rda'))
+# load(paste0('Data/y_mat_', ind, '.rda'))
+load('Data/data_format_1.rda')
+load('Data/y_mat_1.rda')
 
 # Different percentages to fine tune the PCA methods
-P_1 = c(0.99, 0.95, 0.9, 0.85, 0.75, 0.5)
+P_1 = c(0.99, 0.95, 0.9, 0.85, 0.8, 0.75)
 
 # Eigendecomposition for FPCA ----------------------------------------
 N = nrow(y_mat)
