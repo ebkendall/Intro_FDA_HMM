@@ -19,7 +19,7 @@ for(k in 1:K) {
     # Taking the results from multiple seeds applied to the same dataset
     chain_list = vector(mode = "list", length = 3)
     for(j in 1:3) {
-        load(paste0('Model_out/mcmc_out_', j, '_', k, '_bspline.rda'))
+        load(paste0('Model_out/One_data_set/mcmc_out_', j, '_', k, '_bspline.rda'))
         chain_list[[j]] = mcmc_out$chain[1:5000, ]
         par_index = mcmc_out$par_index
     }
@@ -71,7 +71,7 @@ for(k in 1:length(P_1)) {
     # Taking the results from multiple seeds applied to the same dataset
     chain_list = vector(mode = "list", length = 3)
     for(j in 1:3) {
-        load(paste0('Model_out/mcmc_out_', j, '_', k, '_fpca.rda'))
+        load(paste0('Model_out/One_data_set/mcmc_out_', j, '_', k, '_fpca.rda'))
         chain_list[[j]] = mcmc_out$chain[1:5000, ]
         par_index = mcmc_out$par_index
     }
@@ -116,7 +116,7 @@ for(i in 1:n_sim) {
     print(i)
     
     # Adaptive B-spline approach (using K = 10 based on test (1)) -------------
-    load(paste0('Model_out/mcmc_out_', i, '_4_bspline.rda'))
+    load(paste0('Model_out/Simulation/mcmc_out_', i, '_4_bspline.rda'))
     par_index = mcmc_out$par_index
     
     # posterior mean
@@ -136,8 +136,8 @@ for(i in 1:n_sim) {
     EMSE_bspline[[1]][i,] = (f_1_hat - c(fnc_vals[[1]]))^2
     EMSE_bspline[[2]][i,] = (f_2_hat - c(fnc_vals[[2]]))^2
     
-    # FPCA approach (using __% based on the test (2)) -------------------------
-    load(paste0('Model_out/mcmc_out_', i, '_1_fpca.rda'))
+    # FPCA approach (using 99% based on the test (2)) -------------------------
+    load(paste0('Model_out/Simulation/mcmc_out_', i, '_1_fpca.rda'))
     par_index = mcmc_out$par_index
     
     # posterior mean
@@ -154,23 +154,21 @@ for(i in 1:n_sim) {
 
 EMSE_1_bspline = colMeans(EMSE_bspline[[1]])
 EMSE_2_bspline = colMeans(EMSE_bspline[[2]])
+png("Plots/EMSE_bspline.png", width = 1000, height = 600)
 plot(EMSE_1_bspline, type = 'l', xlab = "t", ylab = "EMSE(t)",
      ylim = c(0, max(EMSE_1_bspline, EMSE_2_bspline)))
 lines(EMSE_2_bspline, lty = 2)
 legend("top", legend = c(TeX(r'($g_1$)'), TeX(r'($g_2$)')), lty = c(1, 2), ncol = 2)
+dev.off()
 
 EMSE_1_fpca = colMeans(EMSE_fpca[[1]])
 EMSE_2_fpca = colMeans(EMSE_fpca[[2]])
+png("Plots/EMSE_fpca.png", width = 1000, height = 600)
 plot(EMSE_1_fpca, type = 'l', xlab = "t", ylab = "EMSE(t)",
      ylim = c(0, max(EMSE_1_fpca, EMSE_2_fpca)))
 lines(EMSE_2_fpca, lty = 2)
 legend("top", legend = c(TeX(r'($g_1$)'), TeX(r'($g_2$)')), lty = c(1, 2), ncol = 2)
-
-# -----------------------------------------------------------------------------
-# (4) Mean integrated square error
-# -----------------------------------------------------------------------------
-MISE_1_bspline = 0.01 * sum(EMSE_1_bspline)
-MISE_2_bspline = 0.01 * sum(EMSE_2_bspline)
+dev.off()
 
 # -----------------------------------------------------------------------------
 # (5) Empirical coverage probabilities for function values, t.p.m, and variance 
@@ -189,7 +187,7 @@ for (i in 1:n_sim) {
     print(i)
     
     # Adaptive B-spline approach (using K = 10 based on test (1)) -------------
-    load(paste0('Model_out/mcmc_out_', i, '_4_bspline.rda'))
+    load(paste0('Model_out/Simulation/mcmc_out_', i, '_4_bspline.rda'))
     par_index = mcmc_out$par_index
     B_1 = mcmc_out$B_1
     B_2 = mcmc_out$B_2
@@ -217,7 +215,30 @@ for (i in 1:n_sim) {
     
     post_means_bspline[i, ] = colMeans(new_chain)
     
-    # FPCA approach (using __% based on the test (2)) -------------------------
+    # FPCA approach (using 99% based on the test (2)) -------------------------
+    load(paste0('Model_out/Simulation/mcmc_out_', i, '_1_fpca.rda'))
+    par_index = mcmc_out$par_index
+    B_1 = mcmc_out$B_1
+    B_2 = mcmc_out$B_2
+    
+    est_line1_fpca = est_line2_fpca = matrix(nrow = 5000, ncol = n_i)
+    for(w in 1:5000) {
+        beta_1 = mcmc_out$chain[w, par_index$beta_1]
+        
+        beta_2 = mcmc_out$chain[w, par_index$beta_2]
+        
+        est_line1_fpca[w,] = c(B_1 %*% beta_1)
+        est_line2_fpca[w,] = c(B_2 %*% beta_2)
+    }
+    
+    new_chain = cbind(mcmc_out$chain[1:5000, c(par_index$init, par_index$omega, par_index$sigma2)], 
+                      est_line1_fpca, est_line2_fpca)
+    for(j in 1:length(pars_interest)) {
+        cred_set_fpca[[j]][i, 1] = round(quantile( new_chain[,j], prob=.025), 4)
+        cred_set_fpca[[j]][i, 2] = round(quantile( new_chain[,j], prob=.975), 4)   
+    }
+    
+    post_means_fpca[i, ] = colMeans(new_chain)
 }
 
 cov_df_bspline = rep(NA, length(pars_interest))
@@ -226,6 +247,19 @@ for(i in 1:length(pars_interest)) {
     cov_df_bspline[i] = mean(cred_set_bspline[[i]][,1] <= val & 
                                  val <= cred_set_bspline[[i]][,2], na.rm=T)
 }
+
+print("Coverage probabilities for adaptive B-spline")
+print(cov_df_bspline)
+
+cov_df_fpca = rep(NA, length(pars_interest))
+for(i in 1:length(pars_interest)) {
+    val = pars_interest[i]
+    cov_df_fpca[i] = mean(cred_set_fpca[[i]][,1] <= val & 
+                            val <= cred_set_fpca[[i]][,2], na.rm=T)
+}
+
+print("Coverage probabilities for FPCA")
+print(cov_df_fpca)
 
 # Boxplots --------------------------------------------------------------------
 labels = c('logit initial', 'omega_1', 'omega_2', 'sigma2',
@@ -246,6 +280,25 @@ for(r in 1:length(labels)){
     abline(h=truth,col='green',lwd=4,lty=5)
     mtext(paste0('.95 coverage = ',toString(round(covg,3))), side=1, line=2.5, cex=1.25)
 
+}
+dev.off()
+
+pdf('Plots/boxplots_fpca.pdf')
+par(mfrow=c(3, 3), mar=c(5, 2.5, 2.5, 2.5))  # mar = c(bottom, left, top, right)
+for(r in 1:length(labels)){	
+    
+    truth <- pars_interest[r]
+    covg <- cov_df_fpca[r]
+    
+    plotRange <- c( min( min(post_means_fpca[,r]), truth), 
+                    max( max(post_means_fpca[,r]), truth))
+    
+    boxplot( post_means_fpca[,r], names=c('Posterior means'), ylim=plotRange, ylab=NA, main=labels[r], 
+             outline=TRUE, cex.axis=1.25, cex.main=1.5)
+    
+    abline(h=truth,col='green',lwd=4,lty=5)
+    mtext(paste0('.95 coverage = ',toString(round(covg,3))), side=1, line=2.5, cex=1.25)
+    
 }
 dev.off()
 

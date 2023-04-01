@@ -7,46 +7,10 @@
 using namespace Rcpp;
 
 //  FUNCTIONS: ---------------------------------------------------------------
-
-// [[Rcpp::export]]
-arma::vec update_theta_j(const arma::vec &pars, const arma::field<arma::uvec> &par_index, const int j) {
-    
-    // par_index: (0) init, (1) omega, (2) sigma2, (3) beta_1, (4) beta_2
-    //            (5) theta_1, (6) theta_2, (7) Z_1, (8) Z_2
-    
-    arma::vec theta_new(par_index(5).n_elem);
-    arma::vec zed_1 = pars.elem(par_index(7) - 1);
-    arma::vec zed_2 = pars.elem(par_index(8) - 1);
-    
-    // prior specifications for theta
-    double mu_1 = 0.5;
-    double mu_2 = 0.5;
-    
-    if(j == 1) {
-        for(int i = 0; i < theta_new.n_elem; i++) {
-            double alpha = mu_1 + zed_1(i);
-            double beta  = 2 - mu_1 - zed_1(i);
-            
-            theta_new(i) = r_4beta(alpha, beta, 0, 1);
-        }
-    }
-    
-    if(j == 2) {
-        for(int i = 0; i < theta_new.n_elem; i++) {
-            double alpha = mu_2 + zed_2(i);
-            double beta  = 2 - mu_2 - zed_2(i);
-            
-            theta_new(i) = r_4beta(alpha, beta, 0, 1);
-        }
-    }
-    
-    return theta_new;
-}
-
 arma::mat update_B_mat(arma::vec zed_j, arma::mat &B_j) {
     
     // par_index: (0) init, (1) omega, (2) sigma2, (3) beta_1, (4) beta_2
-    //            (5) theta_1, (6) theta_2, (7) Z_1, (8) Z_2
+    //            (5) Z_1, (6) Z_2
     
     arma::mat new_B_j = B_j;
     
@@ -61,10 +25,10 @@ arma::mat update_B_mat(arma::vec zed_j, arma::mat &B_j) {
 arma::field<arma::mat> update_both_B(const arma::vec &pars, const arma::field<arma::uvec> &par_index,
                                      const arma::mat &B_1, const arma::mat &B_2) {
     // par_index: (0) init, (1) omega, (2) sigma2, (3) beta_1, (4) beta_2
-    //            (5) theta_1, (6) theta_2, (7) Z_1, (8) Z_2
+    //            (5) Z_1, (6) Z_2
     
-    arma::vec zed_1 = pars.elem(par_index(7) - 1);
-    arma::vec zed_2 = pars.elem(par_index(8) - 1);
+    arma::vec zed_1 = pars.elem(par_index(5) - 1);
+    arma::vec zed_2 = pars.elem(par_index(6) - 1);
     
     arma::mat new_B_1 = B_1;
     arma::mat new_B_2 = B_2;
@@ -88,7 +52,7 @@ arma::vec update_beta_j(const arma::vec &pars, const arma::field<arma::uvec> &pa
                         const int j, const arma::vec &EIDs,
                         const arma::mat &B_1, const arma::mat &B_2) {
     // par_index: (0) init, (1) omega, (2) sigma2, (3) beta_1, (4) beta_2
-    //            (5) theta_1, (6) theta_2, (7) Z_1, (8) Z_2
+    //            (5) Z_1, (6) Z_2
     
     arma::vec beta_1 = pars.elem(par_index(3) - 1);
     arma::vec beta_2 = pars.elem(par_index(4) - 1);
@@ -152,7 +116,7 @@ double update_sigma2(const arma::vec &pars, const arma::field<arma::uvec> &par_i
                      const arma::vec &y, const arma::vec &EIDs, const arma::field<arma::vec> &W_1, 
                      const arma::field<arma::vec> &W_2, const arma::mat &B_1, const arma::mat &B_2) {
     // par_index: (0) init, (1) omega, (2) sigma2, (3) beta_1, (4) beta_2
-    //            (5) theta_1, (6) theta_2, (7) Z_1, (8) Z_2
+    //            (5) Z_1, (6) Z_2
     int lambda1 = 1;
     int lambda2 = 1;
     
@@ -197,7 +161,7 @@ double fn_log_post_continuous(const arma::vec &pars, const arma::field<arma::vec
                               const arma::mat &B_1, const arma::mat &B_2) {
     
     // par_index: (0) init, (1) omega, (2) sigma2, (3) beta_1, (4) beta_2
-    //            (5) theta_1, (6) theta_2, (7) Z_1, (8) Z_2
+    //            (5) Z_1, (6) Z_2
     // "i" is the numeric ID number
     // "ii" is the index of the ID
     
@@ -288,7 +252,7 @@ double log_f_i_cpp(const int i, const int ii, const arma::vec &pars, const arma:
                    const int &state_ind, const arma::mat &B_1, const arma::mat &B_2) {
     
     // par_index: (0) init, (1) omega, (2) sigma2, (3) beta_1, (4) beta_2
-    //            (5) theta_1, (6) theta_2, (7) Z_1, (8) Z_2
+    //            (5) Z_1, (6) Z_2
     // "i" is the numeric ID number
     // "ii" is the index of the ID
     double in_value = 0;
@@ -355,7 +319,7 @@ arma::field<arma::vec> update_b_i_cpp(const arma::vec &pars, const arma::field<a
                                       arma::field<arma::vec> &B, const arma::mat &B_1, const arma::mat &B_2) {
     
     // par_index: (0) init, (1) omega, (2) sigma2, (3) beta_1, (4) beta_2
-    //            (5) theta_1, (6) theta_2, (7) Z_1, (8) Z_2
+    //            (5) Z_1, (6) Z_2
     // "i" is the numeric EID number
     // "ii" is the index of the EID
     
@@ -407,16 +371,16 @@ arma::vec update_Z_j(const arma::vec &pars, const arma::field<arma::vec> &prior_
                      arma::mat &B_1, arma::mat &B_2, const int j) {
     
     // par_index: (0) init, (1) omega, (2) sigma2, (3) beta_1, (4) beta_2
-    //            (5) theta_1, (6) theta_2, (7) Z_1, (8) Z_2
+    //            (5) Z_1, (6) Z_2
     
-    arma::vec zed_1_curr = pars.elem(par_index(7) - 1);
+    arma::vec zed_1_curr = pars.elem(par_index(5) - 1);
     arma::mat B_1_interm = update_B_mat(zed_1_curr, B_1);
     
-    arma::vec zed_2_curr = pars.elem(par_index(8) - 1);
+    arma::vec zed_2_curr = pars.elem(par_index(6) - 1);
     arma::mat B_2_interm = update_B_mat(zed_2_curr, B_2);
     
-    arma::vec theta_1    = pars.elem(par_index(5) - 1);
-    arma::vec theta_2    = pars.elem(par_index(6) - 1);
+    double theta_1 = 0.5;
+    double theta_2 = 0.5;
     
     arma::vec zed_update;
     if(j == 1) zed_update = zed_1_curr;
@@ -434,7 +398,7 @@ arma::vec update_Z_j(const arma::vec &pars, const arma::field<arma::vec> &prior_
             double f_1 = fn_log_post_continuous(pars, prior_par, par_index, y, id, EIDs, B_k_1, B_2_interm);
             
             double interm = exp(f_0 - f_1);
-            double p_success = theta_1(i) / ((1 - theta_1(i)) * interm + theta_1(i));
+            double p_success = theta_1 / ((1 - theta_1) * interm + theta_1);
             
             double new_Z = R::rbinom(1, p_success);
             zed_update(i) = new_Z;
@@ -452,7 +416,7 @@ arma::vec update_Z_j(const arma::vec &pars, const arma::field<arma::vec> &prior_
             double f_1 = fn_log_post_continuous(pars, prior_par, par_index, y, id, EIDs, B_1_interm, B_k_1);
             
             double interm = exp(f_0 - f_1);
-            double p_success = theta_2(i) / ((1 - theta_2(i)) * interm + theta_2(i));
+            double p_success = theta_2 / ((1 - theta_2) * interm + theta_2);
             
             double new_Z = R::rbinom(1, p_success);
             zed_update(i) = new_Z;

@@ -16,7 +16,7 @@ if(converge_or_sim == 1) {
     print("Running for multiple K")
     
     load('Data/data_format_1.rda')
-    save_dir = "Model_out/One_seed/"
+    save_dir = "Model_out/One_data_set/"
     
     it_length = 1:length(big_B)
     
@@ -45,14 +45,12 @@ for(k in it_length) {
                  -4, -4,                   # omega
                    0.01,                   # sigma2
                  rep(0  , K), rep(0  , K), # beta_1 & beta_2
-                 rep(0.5, K), rep(0.5, K), # theta_1 & theta_2
                  rep(1  , K), rep(1  , K)) # Z_1 & Z_2
     
     # Setting the par_index for easy access in the algorithm
     par_index = list( init=1, omega = 2:3, sigma2 = 4, 
                       beta_1 = 5:(5 + K - 1), beta_2 = (5 + K):(5 + 2*K - 1),
-                      theta_1 = (5 + 2*K):(5 + 3*K - 1), theta_2 = (5 + 3*K):(5 + 4*K - 1), 
-                      Z_1 = (5 + 4*K):(5 + 5*K - 1), Z_2 = (5 + 5*K):(5 + 6*K - 1))
+                      Z_1 = (5 + 2*K):(5 + 3*K - 1), Z_2 = (5 + 3*K):(5 + 4*K - 1))
     
     # Initializing the proposed state sequence to the true state sequence
     init_state = data_format[,"true_state"]

@@ -12,7 +12,7 @@ set.seed(2022)
 
 # The same evaluation points will be used for all patients
 t = seq(0.01,1,by = 0.01) # NEXT: try t_i = runif(100, 0, 1)
-sigma2 = 0.1^2
+sigma2 = 0.6^2
 
 # Generate a B-spline of degree 3 (i.e. order 4) with K=10 basis functions for each state
 basis_s1 = create.bspline.basis(range(t),norder=4,nbasis=10)
@@ -117,3 +117,27 @@ for(k in 1:length(K)) {
 
 names(big_B) = as.character(K)
 save(big_B, file = 'Data/big_B.rda')
+# -----------------------------------------------------------------------------
+
+# Establishing smooth basis for FPCA since labels unknown ---------------------
+for(b in 1:100) {
+    load(paste0('Data/y_mat_', b, '.rda'))
+    # First smooth the observations by fitting a smooth spline function to each observation
+    basis_num = 10
+    spline_est = create.bspline.basis(range(t), nbasis=basis_num, norder=4)
+    
+    # Evaluate those basis functions at the time points observed to form the matrix
+    # (n_i x basis_num)
+    basismat = eval.basis(unique(t), spline_est)
+    
+    # Using least squares to estimate the coefficients "Regression Spline" (FDA w/ R & Matlab)
+    spline_coeff = lsfit(basismat, t(y_mat), intercept=FALSE)$coef
+    C = t(spline_coeff)
+    
+    y_mat = C %*% t(basismat)
+    
+    save(y_mat, file = paste0('Data/y_mat_smooth_', b, '.rda'))
+}
+# -----------------------------------------------------------------------------
+
+

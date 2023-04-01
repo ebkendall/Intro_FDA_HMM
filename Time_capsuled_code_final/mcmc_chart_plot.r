@@ -6,19 +6,18 @@ set.seed(args[1])
 
 spline_or_fpca = as.numeric(args[2])
 
-trial_num = 1
-
 # Loading data
-load('Data/data_format.rda')
-load('Data/par_index.rda')
+load(paste0('Data/data_format_', toString(args[1]), '.rda'))
 load('Data/true_pars.rda')
 load('Data/big_B.rda')
-load('Data/fnc_vals.rda')
+load('Data/true_fnc_vals.rda')
 
 if(spline_or_fpca == 1) {
-    load(paste0('Model_out/mcmc_out_',toString(args[1]), '_', trial_num, '_bspline.rda'))
+    load(paste0('Model_out/Simulation/mcmc_out_',toString(args[1]), '_4_bspline.rda'))
+    par_index = mcmc_out$par_index
 } else if(spline_or_fpca == 0) {
-    load(paste0('Model_out/mcmc_out_',toString(args[1]), '_', trial_num, '_fpca.rda'))
+    load(paste0('Model_out/Simulation/mcmc_out_',toString(args[1]), '_1_fpca.rda'))
+    par_index = mcmc_out$par_index
 }
 
 mcmc_out$B_chain = mcmc_out$B_chain[1:5000, ]
@@ -31,8 +30,8 @@ true_line2 = fnc_vals$true_fnc_2
 t_pts = 100
 est_line1 = est_line2 = matrix(nrow = 5000, ncol = t_pts)
 if(spline_or_fpca == 1) {
-    B_1 = big_B[['10']]
-    B_2 = big_B[['10']]
+    B_1 = mcmc_out$B_1
+    B_2 = mcmc_out$B_2
     for(i in 1:5000) {
         beta_1 = mcmc_out$chain[i, par_index$beta_1]
         z_1    = mcmc_out$chain[i, par_index$Z_1]
@@ -49,8 +48,8 @@ if(spline_or_fpca == 1) {
     B_1 = mcmc_out$B_1
     B_2 = mcmc_out$B_2
     for(i in 1:5000) {
-        beta_1 = mcmc_out$chain[i, 5:23]
-        beta_2 = mcmc_out$chain[i, 24:42]
+        beta_1 = mcmc_out$chain[i, par_index$beta_1]
+        beta_2 = mcmc_out$chain[i, par_index$beta_2]
 
         est_line1[i,] = c(B_1 %*% beta_1)
         est_line2[i,] = c(B_2 %*% beta_2)

@@ -16,8 +16,8 @@ if(converge_or_sim == 1) {
     print("Running for multiple P_1")
     
     load('Data/data_format_1.rda')
-    load('Data/y_mat_1.rda')
-    save_dir = "Model_out/One_seed/"
+    load('Data/y_mat_smooth_1.rda')
+    save_dir = "Model_out/One_data_set/"
     
     # Different percentages to fine tune the PCA methods
     P_1 = c(0.99, 0.95, 0.9, 0.85, 0.8, 0.75)
@@ -26,7 +26,7 @@ if(converge_or_sim == 1) {
     print(paste0("Running for single P_1: ", 0.99))
     
     load(paste0('Data/data_format_', ind, '.rda'))
-    load(paste0('Data/y_mat_', ind, '.rda'))
+    load(paste0('Data/y_mat_smooth_', ind, '.rda'))
     
     save_dir = "Model_out/Simulation/"
     P_1 = 0.99
@@ -96,39 +96,3 @@ for(k in 1:length(P_1)) {
 
     save(mcmc_out, file = paste0(save_dir, "mcmc_out_", ind, "_", k, "_fpca.rda"))
 }
-
-
-
-# rho = eigen_V$values * w
-# xi = eigen_V$vectors * (1/sqrt(w))
-# -----------------------------------------------------------------------------
-
-# # (NEW) Establishing the basis from FPCA --------------------------------------
-# # First smooth the observations by fitting a smooth spline function to each observation
-# basis_num = 15
-# spline_est = create.bspline.basis(range(t), nbasis=basis_num, norder=4)
-# 
-# # Evaluate those basis functions at the time points observed to form the matrix
-# # (n_i x basis_num)
-# basismat = eval.basis(unique(t), spline_est)
-# basismat = t(basismat)
-# 
-# # Using least squares to estimate the coefficients "Regression Spline" (FDA w/ R & Matlab)
-# spline_coeff = lsfit(basismat, t(y_mat), intercept=FALSE)$coef
-# C = t(spline_coeff)
-# 
-# Y_mat = C %*% basismat
-# 
-# # Next, W is the numerical integral of the cross product of the B-splines
-# # We can approximate this with bins
-# W_est = w * (basismat %*% t(basismat))
-# W_sqrt = sqrtm(W_est)
-# 
-# # Then we want the spline estimates for the eigenfunctions
-# eigen_mat = (1/N) * (W_sqrt %*% t(C) %*% C %*% W_sqrt)
-# eigen_results = eigen(eigen_mat)
-# lambda = eigen_results$values
-# u = eigen_results$vectors
-# b = solve(W_sqrt) %*% u
-# -----------------------------------------------------------------------------
-
