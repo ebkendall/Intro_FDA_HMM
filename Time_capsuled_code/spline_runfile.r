@@ -7,11 +7,24 @@ set.seed(ind)
 print(ind)
 
 load('Data/big_B.rda')
-# load(paste0('Data/data_format_', ind, '.rda'))
-load(paste0('Data/data_format_1.rda'))
 
-for(k in 1:length(big_B)) {
+converge_or_sim = as.numeric(args[2]) 
+
+if(converge_or_sim == 1) {
+    # We run the MCMC for the same data for multiple seeds to check convergence
+    # and determine the optimal K
+    load('Data/data_format_1.rda')
     
+    it_length = 1:length(big_B)
+    
+} else if (converge_or_sim == 0) {
+    # We have established the optimal P_1, and now will run for 100 datasets
+    load(paste0('Data/data_format_', ind, '.rda'))
+    it_length = 4
+}
+
+for(k in it_length) {
+
     # These are initialized such that all Z_1 = Z_2 = 1
     B_1_master = B_2_master = big_B[[k]]
     

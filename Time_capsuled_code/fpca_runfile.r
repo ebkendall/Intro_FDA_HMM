@@ -8,13 +8,22 @@ ind = as.numeric(args[1])
 set.seed(ind)
 print(ind)
 
-# load(paste0('Data/data_format_', ind, '.rda'))
-# load(paste0('Data/y_mat_', ind, '.rda'))
-load('Data/data_format_1.rda')
-load('Data/y_mat_1.rda')
+converge_or_sim = as.numeric(args[2]) 
 
-# Different percentages to fine tune the PCA methods
-P_1 = c(0.99, 0.95, 0.9, 0.85, 0.8, 0.75)
+if(converge_or_sim == 1) {
+    # We run the MCMC for the same data for multiple seeds to check convergence
+    # and determine the optimal P_1
+    load('Data/data_format_1.rda')
+    load('Data/y_mat_1.rda')
+    
+    # Different percentages to fine tune the PCA methods
+    P_1 = c(0.99, 0.95, 0.9, 0.85, 0.8, 0.75)
+} else if (converge_or_sim == 0) {
+    # We have established the optimal P_1, and now will run for 100 datasets
+    load(paste0('Data/data_format_', ind, '.rda'))
+    load(paste0('Data/y_mat_', ind, '.rda'))
+    P_1 = 0.99
+}
 
 # Eigendecomposition for FPCA ----------------------------------------
 N = nrow(y_mat)

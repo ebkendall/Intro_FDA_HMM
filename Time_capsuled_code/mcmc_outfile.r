@@ -18,7 +18,7 @@ steps = 10000
 # Matrix row indices for the posterior sample to use
 index_post = (steps - burnin - n_post + 1):(steps - burnin)
 
-index_seeds = c(1:2)
+index_seeds = c(1:3)
 trial_num = 4
 
 if(spline_or_fpca == 1) {

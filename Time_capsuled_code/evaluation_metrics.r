@@ -15,16 +15,24 @@ metric_val = rep(0, K)
 
 for(k in 1:K) {
     print(k)
-    load(paste0('Model_out/mcmc_out_1_', k, '_bspline.rda'))
-    par_index = mcmc_out$par_index
+    
+    # Taking the results from multiple seeds applied to the same dataset
+    chain_list = vector(mode = "list", length = 3)
+    for(j in 1:3) {
+        load(paste0('Model_out/mcmc_out_', j, '_', k, '_bspline.rda'))
+        chain_list[[j]] = mcmc_out$chain[1:5000, ]
+        par_index = mcmc_out$par_index
+    }
+    
+    stacked_chains = do.call( rbind, chain_list)
     
     # posterior mean
-    beta_1 = colMeans(mcmc_out$chain[,par_index$beta_1])
-    beta_2 = colMeans(mcmc_out$chain[,par_index$beta_2])
+    beta_1 = colMeans(stacked_chains[,par_index$beta_1])
+    beta_2 = colMeans(stacked_chains[,par_index$beta_2])
     
     # posterior mode
-    z_1 = as.numeric(colMeans(mcmc_out$chain[,par_index$Z_1]) > 0.5)
-    z_2 = as.numeric(colMeans(mcmc_out$chain[,par_index$Z_2]) > 0.5)
+    z_1 = as.numeric(colMeans(stacked_chains[,par_index$Z_1]) > 0.5)
+    z_2 = as.numeric(colMeans(stacked_chains[,par_index$Z_2]) > 0.5)
     
     xi_1 = z_1 * beta_1
     xi_2 = z_2 * beta_2
@@ -47,20 +55,31 @@ for(k in 1:K) {
     metric_val[k] = 1 - (1/N) * sum_val
 }
 
+K_values = sapply(big_B, ncol)
+print("Metric for determining the best K: ")
+print(paste0(K_values, ": ", round(metric_val, digits = 4)))
+
 # -----------------------------------------------------------------------------
 # (2) Determining the optimal percentage of variability explained for FPCA 
 # -----------------------------------------------------------------------------
-P_1 = c(0.99, 0.95, 0.9, 0.85, 0.75, 0.5)
+P_1 = c(0.99, 0.95, 0.9, 0.85, 0.8, 0.75)
 metric_val_fpca = rep(0, length(P_1))
 
 for(k in 1:length(P_1)) {
     print(k)
-    load(paste0('Model_out/mcmc_out_2_', k, '_fpca.rda'))
-    par_index = mcmc_out$par_index
+    
+    # Taking the results from multiple seeds applied to the same dataset
+    chain_list = vector(mode = "list", length = 3)
+    for(j in 1:3) {
+        load(paste0('Model_out/mcmc_out_', j, '_', k, '_fpca.rda'))
+        chain_list[[j]] = mcmc_out$chain[1:5000, ]
+        par_index = mcmc_out$par_index
+    }
+    stacked_chains = do.call( rbind, chain_list)
     
     # posterior mean
-    beta_1 = colMeans(mcmc_out$chain[,par_index$beta_1])
-    beta_2 = colMeans(mcmc_out$chain[,par_index$beta_2])
+    beta_1 = colMeans(stacked_chains[,par_index$beta_1])
+    beta_2 = colMeans(stacked_chains[,par_index$beta_2])
     
     sum_val = 0
     for(i in 1:N) {
@@ -80,6 +99,9 @@ for(k in 1:length(P_1)) {
     
     metric_val_fpca[k] = 1 - (1/N) * sum_val
 }
+
+print("Metric for determining the best P1: ")
+print(paste0(P_1*100, "%: ", round(metric_val_fpca, digits = 4)))
 
 # -----------------------------------------------------------------------------
 # (3) Empirical mean square error (EMSE)
@@ -115,6 +137,18 @@ for(i in 1:n_sim) {
     EMSE_bspline[[2]][i,] = (f_2_hat - c(fnc_vals[[2]]))^2
     
     # FPCA approach (using __% based on the test (2)) -------------------------
+    load(paste0('Model_out/mcmc_out_', i, '_1_fpca.rda'))
+    par_index = mcmc_out$par_index
+    
+    # posterior mean
+    beta_1 = colMeans(mcmc_out$chain[,par_index$beta_1])
+    beta_2 = colMeans(mcmc_out$chain[,par_index$beta_2])
+    
+    f_1_hat = c(mcmc_out$B_1 %*% beta_1)
+    f_2_hat = c(mcmc_out$B_2 %*% beta_2)
+    
+    EMSE_fpca[[1]][i,] = (f_1_hat - c(fnc_vals[[1]]))^2
+    EMSE_fpca[[2]][i,] = (f_2_hat - c(fnc_vals[[2]]))^2
     
 }
 
@@ -123,6 +157,13 @@ EMSE_2_bspline = colMeans(EMSE_bspline[[2]])
 plot(EMSE_1_bspline, type = 'l', xlab = "t", ylab = "EMSE(t)",
      ylim = c(0, max(EMSE_1_bspline, EMSE_2_bspline)))
 lines(EMSE_2_bspline, lty = 2)
+legend("top", legend = c(TeX(r'($g_1$)'), TeX(r'($g_2$)')), lty = c(1, 2), ncol = 2)
+
+EMSE_1_fpca = colMeans(EMSE_fpca[[1]])
+EMSE_2_fpca = colMeans(EMSE_fpca[[2]])
+plot(EMSE_1_fpca, type = 'l', xlab = "t", ylab = "EMSE(t)",
+     ylim = c(0, max(EMSE_1_fpca, EMSE_2_fpca)))
+lines(EMSE_2_fpca, lty = 2)
 legend("top", legend = c(TeX(r'($g_1$)'), TeX(r'($g_2$)')), lty = c(1, 2), ncol = 2)
 
 # -----------------------------------------------------------------------------

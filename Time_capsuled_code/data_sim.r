@@ -52,6 +52,14 @@ fnc_vals = list('true_fnc_1' = true_fnc_1,
                 'true_fnc_2' = true_fnc_2)
 save(fnc_vals, file = 'Data/true_fnc_vals.rda')
 
+png("Plots/true_sim.png", width = 1000, height = 600)
+plot(seq(0.01,1,by=0.01),true_fnc_1, type = 'l', 
+     ylim = c(min(true_fnc_1, true_fnc_2), max(true_fnc_1, true_fnc_2)),
+     xlab = 't', ylab = 'g(t)', lwd = 3, cex.lab=1.5, cex.axis=2, cex.main=2)
+lines(seq(0.01,1,by=0.01), true_fnc_2, lty = 2, lwd = 3)
+legend("topright", legend = c(TeX(r'($g_1$)'), TeX(r'($g_2$)')), 
+       lty = c(1, 2), ncol = 2, cex = 2)
+dev.off()
 
 for(seed in 1:100) {
     
