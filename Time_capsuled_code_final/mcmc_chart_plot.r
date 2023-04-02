@@ -1,5 +1,6 @@
 library(matrixStats)
 library(plotrix)
+library(latex2exp)
 
 args <- commandArgs(TRUE)
 set.seed(args[1])
@@ -21,8 +22,6 @@ if(spline_or_fpca == 1) {
 }
 
 mcmc_out$B_chain = mcmc_out$B_chain[1:5000, ]
-# f1_chain = mcmc_out$chain[15000:25000, par_index$f1]
-# f2_chain = mcmc_out$chain[15000:25000, par_index$f2]
 true_line1 = fnc_vals$true_fnc_1
 true_line2 = fnc_vals$true_fnc_2
 
@@ -56,7 +55,6 @@ if(spline_or_fpca == 1) {
     }
 }
 
-
 simulation=T
 
 EIDs = unique(data_format[,'id'])
@@ -81,25 +79,6 @@ for(i in EIDs){
     col_i = data_format[indices_i, "true_state"]
     col_i[col_i == 1] = 4
     
-    
-    # f1 --------------------------------------------------------------
-    # f1_upper = colQuantiles( f1_chain, probs=.975)
-    # f1_lower = colQuantiles( f1_chain, probs=.025)
-    # f2_upper = colQuantiles( f2_chain, probs=.975)
-    # f2_lower = colQuantiles( f2_chain, probs=.025)
-    # 
-    # ylimit = c(min(min(y_i), min(f1_lower, f2_lower)), max(max(y_i), max(f1_upper, f2_upper)))
-    # 
-    # plotCI( x=colMeans(f1_chain), ui=f1_upper, li=f1_lower, ylim = ylimit,
-    #         main=paste0('Function 1 (green) and 2 (purple)'), xlab='time', ylab=NA, xaxt='n', col='turquoise',
-    #         col.axis='green', pch=20, cex=1, sfrac=.0025)
-    # 
-    # plotCI( x=colMeans(f2_chain), ui=f2_upper, li=f2_lower, ylim = ylimit, col='pink',
-    #         pch=20, cex=1, sfrac=.0025, add = T)
-    # 
-    # lines(pars[par_index$f1], col = "blue")
-    # lines(pars[par_index$f2], col = "red")
-    # points(y_i, col = col_i, pch = 17, cex = 2)
     plot(y_i, col = col_i, pch = 17, cex = 2, main = "Function 1 (blue) and 2 (red)", xlab = 'time', ylab = 'y')
     lines(true_line1, col = 4)
     lines(true_line2, col = 2)
@@ -129,4 +108,56 @@ for(i in EIDs){
     lines(true_line1, col = 4, lwd = 0.5)
     lines(true_line2, col = 2, lwd = 0.5)
 }
+dev.off()
+
+
+# Drawing specific patient 42
+indices_i = (data_format[,'id']==42)
+
+y_i = data_format[indices_i, "y"]
+t_i = data_format[indices_i, "t"]
+col_i = data_format[indices_i, "true_state"]
+col_i[col_i == 1] = 4
+
+ylim = c(min(c(fnc_vals[[1]], fnc_vals[[2]], y_i)), max(c(fnc_vals[[1]], fnc_vals[[2]], y_i)))
+png("Plots/sub_42.png", width = 1000, height = 300)
+plot(seq(0.01,1,by=0.01), y_i, col = col_i, pch = col_i+13, cex = 2, ylim = ylim,
+     main = "Simulated time series", xlab = 'time', ylab = 'y', cex.main = 2)
+lines(seq(0.01,1,by=0.01), fnc_vals[[1]], col = 4, lwd = 2)
+lines(seq(0.01,1,by=0.01), fnc_vals[[2]], col = 2, lwd = 2)
+legend( 'topright', inset=c(.8,-.18), xpd=T, horiz=T, bty='n', x.intersp=.75,
+        legend=c( 'State 1', 'State 2'), pch=15, cex=1.5, 
+        col=c( 4, 2))
+dev.off()
+# probs --------------------------------------------------------------
+load(paste0('Model_out/Simulation/mcmc_out_',toString(args[1]), '_4_bspline.rda'))
+par_index = mcmc_out$par_index
+mcmc_out$B_chain = mcmc_out$B_chain[1:5000, ]
+png("Plots/sub_42_pp_bspline.png", width = 1000, height = 300)
+barplot( rbind( colMeans(mcmc_out$B_chain[, indices_i] == 1),
+                colMeans(mcmc_out$B_chain[, indices_i] == 2)), 
+         col=c( 'dodgerblue', 'firebrick1'), 
+         xlab='time', xaxt='n', space=0, border=NA, main = "Posterior probabilities (aBS)",
+         cex.main = 2) 
+grid( nx=NA, NULL, col='white')
+axis(1, at = 1:100, labels = seq(0.01,1,by=0.01), cex = 1.5)
+legend( 'topright', inset=c(.8,-.18), xpd=T, horiz=T, bty='n', x.intersp=.75,
+        legend=c( 'State 1', 'State 2'), pch=15, cex=1.5, 
+        col=c( 4, 2))
+dev.off()
+
+load(paste0('Model_out/Simulation/mcmc_out_',toString(args[1]), '_1_fpca.rda'))
+par_index = mcmc_out$par_index
+mcmc_out$B_chain = mcmc_out$B_chain[1:5000, ]
+png("Plots/sub_42_pp_fpca.png", width = 1000, height = 300)
+barplot( rbind( colMeans(mcmc_out$B_chain[, indices_i] == 1),
+                colMeans(mcmc_out$B_chain[, indices_i] == 2)), 
+         col=c( 'dodgerblue', 'firebrick1'), 
+         xlab='time', xaxt='n', space=0, border=NA, main = "Posterior probabilities (FPCA)",
+         cex.main = 2) 
+grid( nx=NA, NULL, col='white')
+axis(1, at = 1:100, labels = seq(0.01,1,by=0.01), cex = 1.5)
+legend( 'topright', inset=c(.8,-.18), xpd=T, horiz=T, bty='n', x.intersp=.75,
+        legend=c( 'State 1', 'State 2'), pch=15, cex=1.5, 
+        col=c( 4, 2))
 dev.off()

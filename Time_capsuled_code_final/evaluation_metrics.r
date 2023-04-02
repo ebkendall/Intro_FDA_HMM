@@ -154,24 +154,28 @@ for(i in 1:n_sim) {
 
 EMSE_1_bspline = colMeans(EMSE_bspline[[1]])
 EMSE_2_bspline = colMeans(EMSE_bspline[[2]])
-png("Plots/EMSE_bspline.png", width = 1000, height = 600)
-plot(EMSE_1_bspline, type = 'l', xlab = "t", ylab = "EMSE(t)",
-     ylim = c(0, max(EMSE_1_bspline, EMSE_2_bspline)))
-lines(EMSE_2_bspline, lty = 2)
-legend("top", legend = c(TeX(r'($g_1$)'), TeX(r'($g_2$)')), lty = c(1, 2), ncol = 2)
+png("Plots/EMSE_bspline.png", width = 1000, height = 800)
+plot(seq(0.01,1,by=0.01), EMSE_1_bspline, type = 'l', xlab = "t", ylab = "", main = "EMSE(t) aBS",
+     ylim = c(0, max(EMSE_1_bspline, EMSE_2_bspline)), cex.axis=2, cex.lab=2, cex.main = 2.5,
+     lwd = 3)
+lines(seq(0.01,1,by=0.01), EMSE_2_bspline, lty = 2, lwd = 3)
+legend("top", legend = c(TeX(r'($g_1$)'), TeX(r'($g_2$)')), lty = c(1, 2), ncol = 2,
+       cex = 2.5)
 dev.off()
 
 EMSE_1_fpca = colMeans(EMSE_fpca[[1]])
 EMSE_2_fpca = colMeans(EMSE_fpca[[2]])
-png("Plots/EMSE_fpca.png", width = 1000, height = 600)
-plot(EMSE_1_fpca, type = 'l', xlab = "t", ylab = "EMSE(t)",
-     ylim = c(0, max(EMSE_1_fpca, EMSE_2_fpca)))
-lines(EMSE_2_fpca, lty = 2)
-legend("top", legend = c(TeX(r'($g_1$)'), TeX(r'($g_2$)')), lty = c(1, 2), ncol = 2)
+png("Plots/EMSE_fpca.png", width = 1000, height = 800)
+plot(seq(0.01,1,by=0.01), EMSE_1_fpca, type = 'l', xlab = "t", ylab = "", main = "EMSE(t) FPCA",
+     ylim = c(0, max(EMSE_1_fpca, EMSE_2_fpca)), cex.axis=2, cex.lab=2, cex.main = 2.5,
+     lwd = 3)
+lines(seq(0.01,1,by=0.01), EMSE_2_fpca, lty = 2, lwd = 3)
+legend("top", legend = c(TeX(r'($g_1$)'), TeX(r'($g_2$)')), lty = c(1, 2), ncol = 2,
+       cex = 2.5)
 dev.off()
 
 # -----------------------------------------------------------------------------
-# (5) Empirical coverage probabilities for function values, t.p.m, and variance 
+# (4) Empirical coverage probabilities for function values, t.p.m, and variance 
 #     terms and the posterior means boxplots
 # -----------------------------------------------------------------------------
 # Coverage probabilities ------------------------------------------------------
@@ -251,6 +255,10 @@ for(i in 1:length(pars_interest)) {
 print("Coverage probabilities for adaptive B-spline")
 print(cov_df_bspline)
 
+print("Refined Coverage probabilities for B-spline")
+print(c(cov_df_bspline[1:4],mean(cov_df_bspline[5:104]), 
+        mean(cov_df_bspline[105:204])))
+
 cov_df_fpca = rep(NA, length(pars_interest))
 for(i in 1:length(pars_interest)) {
     val = pars_interest[i]
@@ -260,6 +268,53 @@ for(i in 1:length(pars_interest)) {
 
 print("Coverage probabilities for FPCA")
 print(cov_df_fpca)
+
+print("Refined Coverage probabilities for FPCA")
+print(c(cov_df_fpca[1:4],mean(cov_df_fpca[5:104]), 
+        mean(cov_df_fpca[105:204])))
+
+# -----------------------------------------------------------------------------
+# plotting the model fit ------------------------------------------------------
+# -----------------------------------------------------------------------------
+png('Plots/model_fit_bspline.png', width = 1000, height = 800)
+est_line1 = post_means_bspline[,5:104]
+est_line2 = post_means_bspline[,105:204]
+l1_upper = colQuantiles( est_line1, probs=.975)
+l1_lower = colQuantiles( est_line1, probs=.025)
+l2_upper = colQuantiles( est_line2, probs=.975)
+l2_lower = colQuantiles( est_line2, probs=.025)
+
+ylim = c(min(c(est_line1, est_line2)), max(c(est_line1, est_line2)))
+plotCI( x=colMeans(est_line1), ui=l1_upper, li=l1_lower,
+        main="Fitted Curves (aBS)", xlab='time', ylab=NA, xaxt='n', col='blue',
+        pch=20, cex=2, sfrac=.005, ylim = ylim, cex.axis=2, cex.lab=2, cex.main = 2.5)
+plotCI( x=colMeans(est_line2), ui=l2_upper, li=l2_lower, col='red',
+        pch=20, cex=2, sfrac=.005, add = T)
+lines(fnc_vals[[1]], col = 4, lwd = 2)
+lines(fnc_vals[[2]], col = 2, lwd = 2)
+legend("topright", legend = c(TeX(r'($g_1$)'), TeX(r'($g_2$)')), 
+       fill = c("blue", "red"), ncol = 2, cex = 2)
+dev.off()
+
+png('Plots/model_fit_fpca.png', width = 1000, height = 800)
+est_line1 = post_means_fpca[,5:104]
+est_line2 = post_means_fpca[,105:204]
+l1_upper = colQuantiles( est_line1, probs=.975)
+l1_lower = colQuantiles( est_line1, probs=.025)
+l2_upper = colQuantiles( est_line2, probs=.975)
+l2_lower = colQuantiles( est_line2, probs=.025)
+
+ylim = c(min(c(est_line1, est_line2)), max(c(est_line1, est_line2)))
+plotCI( x=colMeans(est_line1), ui=l1_upper, li=l1_lower,
+        main="Fitted Curves (FPCA)", xlab='time', ylab=NA, xaxt='n', col='blue',
+        pch=20, cex=2, sfrac=.005, ylim = ylim, cex.axis=2, cex.lab=2, cex.main = 2.5)
+plotCI( x=colMeans(est_line2), ui=l2_upper, li=l2_lower, col='red',
+        pch=20, cex=2, sfrac=.005, add = T)
+lines(fnc_vals[[1]], col = 4, lwd = 2)
+lines(fnc_vals[[2]], col = 2, lwd = 2)
+legend("topright", legend = c(TeX(r'($g_1$)'), TeX(r'($g_2$)')), 
+       fill = c("blue", "red"), ncol = 2, cex = 2)
+dev.off()
 
 # Boxplots --------------------------------------------------------------------
 labels = c('logit initial', 'omega_1', 'omega_2', 'sigma2',

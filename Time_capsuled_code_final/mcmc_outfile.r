@@ -29,7 +29,6 @@ for(trial_num in 1:total_it) {
         l = ncol(mcmc_out$B_1)
         labels = c('logit initial', 'omega_1', 'omega_2', 'sigma2',
                    paste0('beta1(', 1:l, ')'), paste0('beta2(', 1:l, ')'),
-                   paste0('theta1(', 1:l, ')'), paste0('theta2(', 1:l, ')'), # REMOVE
                    paste0('Z1(', 1:l, ')'), paste0('Z2(', 1:l, ')'))
     } else if(spline_or_fpca == 0) {
         load(paste0(dir, 'mcmc_out_', index_seeds[1], '_', trial_num, '_fpca.rda'))
